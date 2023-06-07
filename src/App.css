@@ -1,0 +1,18 @@
+@import "@blueprintjs/table/lib/css/table.css";
+
+#content {
+  padding: 1em;
+}
+
+#topCardContainer {
+  display: flex;
+  width: 100%;
+}
+
+#topCardContainer > * {
+  flex-grow: 1;
+  margin-left: 10px;
+  margin-right: 10px;
+  width: 33%;
+  height: 10em;
+}
