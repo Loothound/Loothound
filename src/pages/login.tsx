@@ -1,17 +1,16 @@
-import { Button, ButtonGroup } from "@chakra-ui/react";
-import { Navigate } from "react-router-dom";
-import { invoke } from "@tauri-apps/api/tauri";
-import React, { useContext } from "react";
-import useAuth from "../context";
+import { Button, ButtonGroup } from '@chakra-ui/react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { Navigate } from 'react-router-dom';
+import useAuth from '../AuthContext';
 
 async function login() {
-  invoke("do_oauth");
+  invoke('do_oauth');
 }
 
 export default function Login() {
   const token = useAuth();
-  if (token !== "") {
-    return <Navigate to={"/home"} />;
+  if (token !== '') {
+    return <Navigate to={'/home'} />;
   }
   return (
     <>

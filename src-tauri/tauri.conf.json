@@ -41,7 +41,14 @@
       "targets": "all"
     },
     "security": {
-      "csp": null
+      "csp": null,
+      "dangerousRemoteDomainIpcAccess": [
+        {
+          "domain": "www.pathofexile.com",
+          "windows": ["oauth_window"],
+          "enableTauriAPI": true
+        }
+      ]
     },
     "updater": {
       "active": false
