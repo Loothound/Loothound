@@ -1,45 +1,30 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import {
-  ChakraProvider,
-  extendTheme,
-  type ThemeConfig,
-} from "@chakra-ui/react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Login from "./pages/login";
-import { OauthProvider } from "./context";
-import axios from "axios";
-
-axios.defaults.baseURL = "https://api.pathofexile.com";
-
-const themeConfig: ThemeConfig = {
-  initialColorMode: "dark",
-  useSystemColorMode: false,
-};
-const theme = extendTheme({ themeConfig });
+import React from 'react';
+import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
+import ReactDOM from 'react-dom/client';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import App from './App';
+import { OAuthProvider } from './AuthContext';
+import Login from './pages/Login';
+import theme from './theme';
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: (
-      <>
-        <Login />
-      </>
-    ),
+    path: '/',
+    element: <Login />,
   },
   {
-    path: "/home",
+    path: '/home',
     element: <App />,
   },
 ]);
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
-      <OauthProvider>
+      <OAuthProvider>
+        <ColorModeScript initialColorMode={theme.config.initialColorMode} />
         <RouterProvider router={router} />
-      </OauthProvider>
+      </OAuthProvider>
     </ChakraProvider>
   </React.StrictMode>
 );

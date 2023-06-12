@@ -1,20 +1,17 @@
-import React from "react";
 import {
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
-  StatGroup,
   Card,
   CardBody,
-  Flex,
   SimpleGrid,
-} from "@chakra-ui/react";
+  Stat,
+  StatArrow,
+  StatHelpText,
+  StatLabel,
+  StatNumber,
+} from '@chakra-ui/react';
 
 export function SampleStats() {
   return (
-    <SimpleGrid columns={3} spacing={10} px={5}>
+    <SimpleGrid columns={3} spacing={10} px={5} my={4}>
       <Card flexGrow={1}>
         <CardBody>
           <Stat>
