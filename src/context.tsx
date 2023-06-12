@@ -9,6 +9,7 @@ interface OauthContextType {
 }
 
 const OauthContext = createContext("");
+
 export function OauthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState("");
   useEffect(() => {

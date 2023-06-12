@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import "./App.css";
-import { getClient, ResponseType } from "@tauri-apps/api/http";
-import { Button, ButtonGroup } from "@chakra-ui/react";
+import {
+  Button,
+  ButtonGroup,
+  Box,
+  IconButton,
+  Divider,
+  useColorModeValue,
+} from "@chakra-ui/react";
 import useAuth from "./context";
 import {
   useReactTable,
@@ -22,27 +28,26 @@ import {
   LineElement,
   Title,
 } from "chart.js";
-import { Table, Thead, Tbody, Tr, Th, Td, chakra } from "@chakra-ui/react";
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  chakra,
+  Flex,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Card,
+} from "@chakra-ui/react";
 import { Line } from "react-chartjs-2";
 import { faker } from "@faker-js/faker";
-
-async function load_data(token: string) {
-  const client = await getClient();
-  const options = {
-    headers: {
-      Authorization: "Bearer " + token,
-      "User-Agent":
-        "OAuth loothound/0.1 (contact: paul.kosel@rub.de) StrictMode",
-    },
-    responseType: ResponseType.JSON,
-  };
-  const response = await client.get<{
-    stash: StashTab;
-  }>("https://api.pathofexile.com/stash/Crucible/483a28203d", options);
-  console.log(token);
-  console.log(response);
-  return response.data.stash;
-}
+import mkRequest from "./client";
+import { BellIcon, DeleteIcon, ChevronDownIcon } from "@chakra-ui/icons";
+import { SampleStats } from "./parts/samplestats";
 
 interface Item {
   name: string;
@@ -119,17 +124,68 @@ function App() {
 
   return (
     <>
-      <h1>Test</h1>
-      <ButtonGroup>
-        <Button
-          onClick={async () => {
-            const data = await load_data(token);
-            setStashes(data);
-          }}
-        >
-          Fetch
-        </Button>
-      </ButtonGroup>
+      <Box bg={useColorModeValue("gray.100", "gray.900")} px={4}>
+        <Flex h={14} alignItems={"center"} justifyContent={"space-between"}>
+          <Box />
+          <Flex
+            h={14}
+            alignItems={"center"}
+            justifyContent={"center"}
+            gap="5px"
+          >
+            <Menu>
+              <MenuButton
+                as={Button}
+                variant="outline"
+                rightIcon={<ChevronDownIcon />}
+              >
+                Profile
+              </MenuButton>
+              <MenuList>
+                <MenuItem>Profile 1</MenuItem>
+                <MenuItem>Profile 2</MenuItem>
+                <MenuItem>Profile 3</MenuItem>
+              </MenuList>
+            </Menu>
+            <Divider orientation="vertical" />
+            <ButtonGroup isAttached variant="outline">
+              <Button
+                onClick={async () => {
+                  const data = await mkRequest(
+                    "stash/Crucible/483a28203d",
+                    token
+                  );
+                  console.log(data);
+                  setStashes(data.stash);
+                }}
+              >
+                Take Snapshot
+              </Button>
+              <IconButton
+                aria-label="Delete snapshots"
+                colorScheme="red"
+                icon={<DeleteIcon />}
+              />
+            </ButtonGroup>
+            <Divider orientation="vertical" />
+            <IconButton
+              variant="outline"
+              icon={<BellIcon />}
+              aria-label="Show notifications"
+            />
+            <Divider orientation="vertical" />
+            <IconButton
+              variant="outline"
+              icon={<BellIcon />}
+              aria-label="Show notifications"
+            />
+          </Flex>
+        </Flex>
+      </Box>
+
+      <Box pt="5px" w="100%" justifyContent="center">
+        <SampleStats />
+      </Box>
       <Table>
         <Thead>
           <Tr>
