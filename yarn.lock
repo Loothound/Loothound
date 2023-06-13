@@ -1441,7 +1441,7 @@
   resolved "https://registry.yarnpkg.com/@tanstack/table-core/-/table-core-8.9.2.tgz#0402364a2a9692edf04e05ee6f385dfa27271da5"
   integrity sha512-ajc0OF+karBAdaSz7OK09rCoAHB1XI1+wEhu+tDNMPc+XcO+dTlXXN/Vc0a8vym4kElvEjXEDd9c8Zfgt4bekA==
 
-"@tauri-apps/api@^1.0.2", "@tauri-apps/api@^1.3.0":
+"@tauri-apps/api@^1.0.2", "@tauri-apps/api@^1.2.0", "@tauri-apps/api@^1.3.0":
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/@tauri-apps/api/-/api-1.3.0.tgz#d0c853ab2cc7506bd826c5f7f260c67c7c15def5"
   integrity sha512-AH+3FonkKZNtfRtGrObY38PrzEj4d+1emCbwNGu0V2ENbXjlLHMZQlUh+Bhu/CRmjaIwZMGJ3yFvWaZZgTHoog==
@@ -3413,6 +3413,12 @@ supports-preserve-symlinks-flag@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
+
+"tauri-plugin-sql-api@https://github.com/tauri-apps/tauri-plugin-sql#v1":
+  version "0.0.0"
+  resolved "https://github.com/tauri-apps/tauri-plugin-sql#45b46ee428f6c13a831d237d8b602349ad6b17a6"
+  dependencies:
+    "@tauri-apps/api" "^1.2.0"
 
 text-table@^0.2.0:
   version "0.2.0"

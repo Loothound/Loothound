@@ -1,4 +1,4 @@
-import { BellIcon, ChevronDownIcon, DeleteIcon } from '@chakra-ui/icons';
+import { BellIcon, ChevronDownIcon, DeleteIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -11,11 +11,12 @@ import {
   MenuItem,
   MenuList,
   useColorModeValue,
-} from '@chakra-ui/react';
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import useAuth from '../AuthContext';
-import getRequest from '../api/client';
-import { ExtendedStashTab, StashTab } from '../types/types';
+} from "@chakra-ui/react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import useAuth from "../AuthContext";
+import getRequest from "../api/client";
+import { ExtendedStashTab, StashTab } from "../types/types";
+import useDb from "../DbContext";
 
 type Props = {
   setStash: Dispatch<SetStateAction<ExtendedStashTab | null>>;
@@ -26,22 +27,28 @@ const TopBar = ({ setStash }: Props) => {
   const [stashList, setStashList] = useState<StashTab[]>([]);
   const [isStashListLoading, setIsStashListLoading] = useState(false);
   const [selectedStashId, setSelectedStashId] = useState<string | null>(null);
-
+  const db = useDb();
   useEffect(() => {
     setIsStashListLoading(true);
     console.log(selectedStashId);
-    getRequest<{ stashes: StashTab[] }>('stash/Crucible', token)
+    getRequest<{ stashes: StashTab[] }>("stash/Crucible", token)
       .then(({ stashes }) => {
         setStashList(stashes);
+        for (const stash of stashes) {
+          db?.execute("INSERT OR IGNORE INTO stashes VALUES($1, $2);", [
+            stash.id,
+            stash.name,
+          ]);
+        }
       })
       .finally(() => setIsStashListLoading(false));
   }, []);
 
   return (
-    <Box bg={useColorModeValue('gray.100', 'gray.900')} px={4}>
-      <Flex h={14} alignItems={'center'} justifyContent={'space-between'}>
+    <Box bg={useColorModeValue("gray.100", "gray.900")} px={4}>
+      <Flex h={14} alignItems={"center"} justifyContent={"space-between"}>
         <Box />
-        <Flex h={14} alignItems={'center'} justifyContent={'center'} gap="5px">
+        <Flex h={14} alignItems={"center"} justifyContent={"center"} gap="5px">
           <Menu>
             <MenuButton
               as={Button}
@@ -50,7 +57,7 @@ const TopBar = ({ setStash }: Props) => {
             >
               {selectedStashId
                 ? stashList.find((stash) => stash.id === selectedStashId)?.name
-                : 'Select...'}
+                : "Select..."}
             </MenuButton>
             <MenuList>
               {stashList &&

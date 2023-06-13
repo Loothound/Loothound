@@ -52,6 +52,7 @@ async fn do_oauth(app: tauri::AppHandle, window: Window) -> Result<u16, String> 
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![do_oauth])
+        .plugin(tauri_plugin_sql::Builder::default().build())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
