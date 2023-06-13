@@ -1,19 +1,24 @@
-import { listen } from '@tauri-apps/api/event';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { listen } from "@tauri-apps/api/event";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-const OAuthContext = createContext('');
+const OAuthContext = createContext("");
+
+interface Payload {
+  access_token: string;
+}
 
 export function OAuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState("");
 
   useEffect(() => {
-    setToken(localStorage.getItem('oauth_token') || '');
+    setToken(localStorage.getItem("oauth_token") || "");
   }, []);
 
   useEffect(() => {
-    const unlisten = listen('oauth_token', (evt) => {
-      setToken(evt.payload as string);
-      localStorage.setItem('oauth_token', evt.payload as string);
+    const unlisten = listen("oauth_token", (evt) => {
+      const payload: Payload = evt.payload as Payload;
+      setToken(payload.access_token as string);
+      localStorage.setItem("oauth_token", payload.access_token as string);
     });
     return () => {
       unlisten.then((f) => f());

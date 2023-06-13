@@ -1,5 +1,5 @@
-import { Table, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react';
-import { Line } from 'react-chartjs-2';
+import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { Line } from "react-chartjs-2";
 import {
   CategoryScale,
   Chart as ChartJS,
@@ -9,9 +9,8 @@ import {
   PointElement,
   Title,
   Tooltip,
-} from 'chart.js';
-import { faker } from '@faker-js/faker';
-import { Item } from '../types/types';
+} from "chart.js";
+import { Item } from "../types/types";
 
 type Props = {
   items: Item[];
@@ -39,16 +38,16 @@ export const options = {
   },
 };
 
-const labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
+const labels = ["January", "February", "March", "April", "May", "June", "July"];
 
 export const data = {
   labels,
   datasets: [
     {
-      label: 'Dataset 1',
-      data: labels.map(() => faker.datatype.number({ min: -1000, max: 1000 })),
-      borderColor: 'rgb(255, 99, 132)',
-      backgroundColor: 'rgba(255, 99, 132, 0.5)',
+      label: "Dataset 1",
+      data: labels.map(() => 1),
+      borderColor: "rgb(255, 99, 132)",
+      backgroundColor: "rgba(255, 99, 132, 0.5)",
       fill: false,
       pointRadius: 0,
       spanGaps: true,
@@ -86,7 +85,7 @@ const ItemTable = ({ items }: Props) => {
               <Td>{item.baseType}</Td>
               <Td>{item.stackSize}</Td>
               <Td>
-                <div style={{ height: '50px' }}>
+                <div style={{ height: "50px" }}>
                   <Line options={options} data={data} />
                 </div>
               </Td>

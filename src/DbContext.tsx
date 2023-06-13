@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import Database from "tauri-plugin-sql-api";
+import Database, { QueryResult } from "tauri-plugin-sql-api";
 
 interface DbContextType {
   db: Database;
@@ -10,7 +10,7 @@ interface DbContextType {
     fields: Record<string, string>
   ) => Promise<void>;
 }
-const DbContext = createContext<DbContextType>(null);
+const DbContext = createContext<DbContextType>({} as unknown as DbContextType);
 
 export function DbContextProvider({
   tables,
@@ -19,23 +19,28 @@ export function DbContextProvider({
   tables: Record<string, Record<string, string>>;
   children: React.ReactNode;
 }) {
-  const [database, setDatabase] = useState<DbContextType>(null);
+  const [database, setDatabase] = useState<DbContextType>(
+    {} as unknown as DbContextType
+  );
 
   useEffect(() => {
     (async () => {
       const d = await Database.load("sqlite:loothound.db");
-      async function select<T>(query: string, bind?: unknown[]): T {
+      async function select<T>(query: string, bind?: unknown[]): Promise<T> {
         return await d.select(query, bind);
       }
 
-      async function execute<T>(query: string, bind?: unknown[]): T {
+      async function execute(
+        query: string,
+        bind?: unknown[]
+      ): Promise<QueryResult> {
         return await d.execute(query, bind);
       }
 
       async function createTableIfNotExists(
         name: string,
         fields: Record<string, string>
-      ): boolean {
+      ) {
         let str_fields = "(";
         for (const [k, v] of Object.entries(fields)) {
           str_fields += k + " " + v + ",";
