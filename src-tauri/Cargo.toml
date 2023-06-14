@@ -18,7 +18,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 directories = "5.0.1"
 tauri-plugin-oauth = "0.0.0-alpha.0"
-oauth2 = { version = "4.4.1", features = ["curl"] }
+oauth2 = "4.4.1"
 url = "2.4.0"
 thiserror = "1.0.40"
 

@@ -6,27 +6,11 @@ use tauri_plugin_oauth::{start_with_config, OauthConfig};
 use url::Url;
 
 use oauth2::basic::BasicClient;
-use oauth2::curl::http_client;
+use oauth2::reqwest::http_client;
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, CsrfToken, HttpRequest, HttpResponse, PkceCodeChallenge,
-    RedirectUrl, Scope, TokenResponse, TokenUrl,
+    RedirectUrl, Scope, TokenUrl,
 };
-
-fn my_client(request: HttpRequest) -> Result<HttpResponse, oauth2::curl::Error> {
-    println!("{:?}", request);
-    let response = http_client(request);
-    if let Ok(r) = response {
-        let buf = &r.body;
-        let s = match std::str::from_utf8(buf) {
-            Ok(v) => v,
-            Err(e) => panic!("Invalid utf-8 sequence"),
-        };
-        println!("{:?}", s);
-        return Ok(r);
-    } else {
-        return Err(response.err().expect("oopsie"));
-    }
-}
 
 #[command]
 async fn do_oauth(app: tauri::AppHandle, window: Window) -> Result<u16, String> {
@@ -67,7 +51,7 @@ async fn do_oauth(app: tauri::AppHandle, window: Window) -> Result<u16, String> 
             let token_result = client
                 .exchange_code(AuthorizationCode::new(code.to_string()))
                 .set_pkce_verifier(verifier_option.take().unwrap())
-                .request(my_client)
+                .request(http_client)
                 .unwrap();
             println!("{:?}", token_result);
             let _ = window.emit("oauth_token", token_result);
