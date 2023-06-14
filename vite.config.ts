@@ -4,7 +4,16 @@ import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react(), visualizer() as PluginOption],
+  plugins: [react({
+    babel: {
+      plugins: [
+        "babel-plugin-transform-typescript-metadata",
+        ["@babel/plugin-proposal-decorators", { legacy: true }],
+        ["@babel/plugin-proposal-class-properties", { loose: true }],
+      ],
+      presets: ["@babel/preset-typescript"]
+    }
+  }), visualizer() as PluginOption],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   // prevent vite from obscuring rust errors

@@ -26,3 +26,4 @@ dist-ssr
 src-tauri/target
 
 stats.html
+vite.config.ts.timestamp*

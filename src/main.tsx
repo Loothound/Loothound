@@ -7,6 +7,7 @@ import { OAuthProvider } from "./AuthContext";
 import { DbContextProvider } from "./DbContext";
 import Login from "./pages/Login";
 import theme from "./theme";
+import "./database/model";
 
 const router = createBrowserRouter([
   {

@@ -18,8 +18,9 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 directories = "5.0.1"
 tauri-plugin-oauth = "0.0.0-alpha.0"
-oauth2 = "4.4.1"
+oauth2 = { version = "4.4.1", features = ["curl"] }
 url = "2.4.0"
+thiserror = "1.0.40"
 
 [dependencies.tauri-plugin-sql]
 git = "https://github.com/tauri-apps/plugins-workspace"

@@ -80,6 +80,7 @@ const TopBar = ({ setStash }: Props) => {
                   `stash/Crucible/${selectedStashId}`,
                   token
                 );
+                console.log(stash);
                 setStash(stash);
               }}
             >
