@@ -1,65 +1,49 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import Database, { QueryResult } from "tauri-plugin-sql-api";
+import Database from "tauri-plugin-sql-api";
+import { Database as DatabaseType } from "./database/model";
+import {
+  Kysely,
+  Migrator,
+  SqliteAdapter,
+  SqliteIntrospector,
+  SqliteQueryCompiler,
+} from "kysely";
+import { TauriDriver } from "./database/driver";
+import LoothoundMigrationProvider from "./database/migrations";
 
-interface DbContextType {
-  db: Database;
-  select: <T>(query: string, bind?: unknown[]) => Promise<T>;
-  execute: (query: string, bind?: unknown[]) => Promise<QueryResult>;
-  createTableIfNotExists: (
-    name: string,
-    fields: Record<string, string>
-  ) => Promise<void>;
-}
+export type DbContextType = Kysely<DatabaseType>;
 const DbContext = createContext<DbContextType>({} as unknown as DbContextType);
 
-export function DbContextProvider({
-  tables,
-  children,
-}: {
-  tables: Record<string, Record<string, string>>;
-  children: React.ReactNode;
-}) {
+export function DbContextProvider({ children }: { children: React.ReactNode }) {
   const [database, setDatabase] = useState<DbContextType>(
     {} as unknown as DbContextType
   );
 
   useEffect(() => {
     (async () => {
-      const d = await Database.load("sqlite:loothound.db");
-      async function select<T>(query: string, bind?: unknown[]): Promise<T> {
-        return await d.select(query, bind);
-      }
+      const db: DbContextType = new Kysely<DatabaseType>({
+        dialect: {
+          createAdapter() {
+            return new SqliteAdapter();
+          },
+          createDriver() {
+            return new TauriDriver();
+          },
+          createIntrospector(db: Kysely<Database>) {
+            return new SqliteIntrospector(db);
+          },
+          createQueryCompiler() {
+            return new SqliteQueryCompiler();
+          },
+        },
+      });
 
-      async function execute(
-        query: string,
-        bind?: unknown[]
-      ): Promise<QueryResult> {
-        return await d.execute(query, bind);
-      }
+      const migrator = new Migrator({
+        db,
+        provider: LoothoundMigrationProvider,
+      });
+      await migrator.migrateToLatest();
 
-      async function createTableIfNotExists(
-        name: string,
-        fields: Record<string, string>
-      ) {
-        let str_fields = "(";
-        for (const [k, v] of Object.entries(fields)) {
-          str_fields += k + " " + v + ",";
-        }
-        str_fields = str_fields.slice(0, -1) + ")";
-        console.log(name, str_fields);
-        await d.execute(
-          "CREATE TABLE IF NOT EXISTS " + name + " " + str_fields + ";"
-        );
-      }
-      const db = {
-        db: d,
-        select: select,
-        execute: execute,
-        createTableIfNotExists: createTableIfNotExists,
-      };
-      for (const [k, v] of Object.entries(tables)) {
-        db.createTableIfNotExists(k, v);
-      }
       setDatabase(db);
     })();
   }, []);

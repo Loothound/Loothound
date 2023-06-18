@@ -20,18 +20,11 @@ const router = createBrowserRouter([
   },
 ]);
 
-const tables = {
-  stashes: {
-    id: "text primary key",
-    name: "text not null",
-  },
-};
-
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
       <OAuthProvider>
-        <DbContextProvider tables={tables}>
+        <DbContextProvider>
           <ColorModeScript initialColorMode={theme.config.initialColorMode} />
           <RouterProvider router={router} />
         </DbContextProvider>

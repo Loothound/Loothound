@@ -23,6 +23,7 @@
     "chart.js": "^4.3.0",
     "dataclass": "^2.1.1",
     "framer-motion": "^10.12.16",
+    "kysely": "^0.25.0",
     "prettier": "^2.8.8",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",

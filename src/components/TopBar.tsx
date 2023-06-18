@@ -35,10 +35,7 @@ const TopBar = ({ setStash }: Props) => {
       .then(({ stashes }) => {
         setStashList(stashes);
         for (const stash of stashes) {
-          db?.execute("INSERT OR IGNORE INTO stashes VALUES($1, $2);", [
-            stash.id,
-            stash.name,
-          ]);
+          db?.insertInto("stashes").values(stash).execute();
         }
       })
       .finally(() => setIsStashListLoading(false));
