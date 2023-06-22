@@ -259,11 +259,6 @@
     "@babel/helper-validator-identifier" "^7.22.5"
     to-fast-properties "^2.0.0"
 
-"@badgateway/oauth2-client@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@badgateway/oauth2-client/-/oauth2-client-2.2.0.tgz#c868576329af49104b32c07660c4f8b11363e292"
-  integrity sha512-P8roB2b800UOW9Lny8tzhhi/ZUH7rYcS+O+GOdeJT6waPRjU1JQLPfybCR9Rr58INQbbTXExtZbQqovZCAGP2g==
-
 "@chakra-ui/accordion@2.2.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@chakra-ui/accordion/-/accordion-2.2.0.tgz#a38ed8e7d0a7ccc6910282f913c42cf6deea7215"
@@ -1822,6 +1817,11 @@ caniuse-lite@^1.0.30001449:
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001489.tgz#ca82ee2d4e4dbf2bd2589c9360d3fcc2c7ba3bd8"
   integrity sha512-x1mgZEXK8jHIfAxm+xgdpHpk50IN3z3q3zP261/WS+uvePxW8izXuCu6AHz0lkuYTlATDehiZ/tNyYBdSQsOUQ==
 
+chakra-multiselect@^0.4.5:
+  version "0.4.5"
+  resolved "https://registry.yarnpkg.com/chakra-multiselect/-/chakra-multiselect-0.4.5.tgz#953b682e33c8ef2d95efd6926d4890676e6d95ab"
+  integrity sha512-83uZqeLLoU0XG2FbjP20Pw7MY6emgqtRNo7ahkwfjwBUUs+aJvFHQoyprSWEU3DuloK/moNPEyyJHRytCNhT6Q==
+
 chalk@^2.0.0:
   version "2.4.2"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.4.2.tgz#cd42541677a54333cf541a49108c1432b44c9424"
@@ -1937,6 +1937,11 @@ csstype@^3.0.11, csstype@^3.0.2:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.1.2.tgz#1d4bf9d572f11c14031f0436e1c10bc1f571f50b"
   integrity sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==
+
+dataclass@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/dataclass/-/dataclass-2.1.1.tgz#a1e7ff119d709568120d718fbf9c5b14b30a00fd"
+  integrity sha512-UNG2qao2GaHrnVQtarekOjUt1BvU6vt1OUnYSp+3BuFNs+iKjiBmIz2cabXtP2ZjthM8n3ox1lRKrUxp4SKG9A==
 
 debug@^4.1.0, debug@^4.1.1, debug@^4.3.2, debug@^4.3.4:
   version "4.3.4"
@@ -2775,6 +2780,11 @@ json5@^2.2.2:
     array-includes "^3.1.5"
     object.assign "^4.1.3"
 
+kysely@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/kysely/-/kysely-0.25.0.tgz#a1289d55035aa13c165dc06821fee2c04a1a9700"
+  integrity sha512-srn0efIMu5IoEBk0tBmtGnoUss4uwvxtbFQWG/U2MosfqIace1l43IFP1PmEpHRDp+Z79xIcKEqmHH3dAvQdQA==
+
 levn@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/levn/-/levn-0.4.1.tgz#ae4562c007473b932a6200d403268dd2fffc6ade"
@@ -3166,6 +3176,11 @@ react@^18.2.0:
   integrity sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==
   dependencies:
     loose-envify "^1.1.0"
+
+reflect-metadata@^0.1.13:
+  version "0.1.13"
+  resolved "https://registry.yarnpkg.com/reflect-metadata/-/reflect-metadata-0.1.13.tgz#67ae3ca57c972a2aa1642b10fe363fe32d49dc08"
+  integrity sha512-Ts1Y/anZELhSsjMcU605fU9RE4Oi3p5ORujwbIKXfWa+0Zxs510Qrmrce5/Jowq3cHSZSJqBjypxmHarc+vEWg==
 
 regenerator-runtime@^0.13.11:
   version "0.13.11"

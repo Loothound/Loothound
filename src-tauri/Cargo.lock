@@ -1694,6 +1694,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-oauth",
  "tauri-plugin-sql",
+ "thiserror",
  "url",
 ]
 

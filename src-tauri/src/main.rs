@@ -8,8 +8,8 @@ use url::Url;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
 use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl, Scope,
-    TokenResponse, TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, CsrfToken, HttpRequest, HttpResponse, PkceCodeChallenge,
+    RedirectUrl, Scope, TokenUrl,
 };
 
 #[command]
@@ -53,7 +53,7 @@ async fn do_oauth(app: tauri::AppHandle, window: Window) -> Result<u16, String> 
                 .set_pkce_verifier(verifier_option.take().unwrap())
                 .request(http_client)
                 .unwrap();
-            println!("{:?}", token_result.access_token());
+            println!("{:?}", token_result);
             let _ = window.emit("oauth_token", token_result);
         },
     )
