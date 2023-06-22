@@ -1,23 +1,29 @@
-import { getClient, ResponseType } from '@tauri-apps/api/http';
+import axios from 'axios';
+import axiosTauriApiAdapter from 'axios-tauri-api-adapter';
+const client = axios.create({
+  adapter: axiosTauriApiAdapter,
+  baseURL: 'https://api.pathofexile.com/',
+});
 
-export default async function getRequest<T>(
-  endpoint: string,
-  token: string
-): Promise<T> {
-  const client = await getClient();
-  const options = {
-    headers: {
-      Authorization: 'Bearer ' + token,
-      'User-Agent':
-        'OAuth loothound/0.1 (contact: paul.kosel@rub.de) StrictMode',
-    },
-    responseType: ResponseType.JSON,
-  };
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('oauth_token');
+  config.headers['Authorization'] = 'Bearer ' + token;
+  config.headers['User-Agent'] =
+    'OAuth loothound/0.1 (contact: paul.kosel@rub.de) StrictMode';
 
-  const response = await client.get<T>(
-    'https://api.pathofexile.com/' + endpoint,
-    options
-  );
+  return config;
+});
 
-  return response.data;
-}
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.log(error);
+    if (error.response.status === 401) {
+      localStorage.removeItem('oauth_token');
+      window.location.href = '/';
+    }
+    return error;
+  }
+);
+
+export default client;
