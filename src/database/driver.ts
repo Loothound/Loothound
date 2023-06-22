@@ -50,7 +50,7 @@ class TauriConnection implements DatabaseConnection {
     compiledQuery: CompiledQuery<unknown>
   ): Promise<QueryResult<R>> {
     const { sql, parameters } = compiledQuery;
-    if (sql.startsWith("SELECT")) {
+    if (sql.startsWith("select")) {
       // assume select query
       const response: R[] = await this.#db.select<R[]>(sql, [...parameters]);
       return {

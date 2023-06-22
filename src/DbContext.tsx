@@ -10,14 +10,13 @@ import {
 } from "kysely";
 import { TauriDriver } from "./database/driver";
 import LoothoundMigrationProvider from "./database/migrations";
+import { Spinner } from "@chakra-ui/react";
 
-export type DbContextType = Kysely<DatabaseType>;
-const DbContext = createContext<DbContextType>({} as unknown as DbContextType);
+export type DbContextType = Kysely<DatabaseType> | undefined;
+const DbContext = createContext<DbContextType>(undefined);
 
 export function DbContextProvider({ children }: { children: React.ReactNode }) {
-  const [database, setDatabase] = useState<DbContextType>(
-    {} as unknown as DbContextType
-  );
+  const [database, setDatabase] = useState<DbContextType>(undefined);
 
   useEffect(() => {
     (async () => {
@@ -29,7 +28,7 @@ export function DbContextProvider({ children }: { children: React.ReactNode }) {
           createDriver() {
             return new TauriDriver();
           },
-          createIntrospector(db: Kysely<Database>) {
+          createIntrospector(db: Kysely<unknown>) {
             return new SqliteIntrospector(db);
           },
           createQueryCompiler() {
@@ -48,9 +47,17 @@ export function DbContextProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  if (!database) {
+    return <Spinner size="xl" />;
+  }
+
   return <DbContext.Provider value={database}>{children}</DbContext.Provider>;
 }
 
 export default function useDb() {
-  return useContext(DbContext);
+  const ctx = useContext(DbContext);
+  if (!ctx) {
+    throw new Error("Used useDb outside of provider");
+  }
+  return ctx;
 }

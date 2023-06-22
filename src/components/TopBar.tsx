@@ -42,68 +42,75 @@ const TopBar = ({ setStash }: Props) => {
   }, []);
 
   return (
-    <Box bg={useColorModeValue("gray.100", "gray.900")} px={4}>
-      <Flex h={14} alignItems={"center"} justifyContent={"space-between"}>
-        <Box />
-        <Flex h={14} alignItems={"center"} justifyContent={"center"} gap="5px">
-          <Menu>
-            <MenuButton
-              as={Button}
-              variant="outline"
-              rightIcon={<ChevronDownIcon />}
-            >
-              {selectedStashId
-                ? stashList.find((stash) => stash.id === selectedStashId)?.name
-                : "Select..."}
-            </MenuButton>
-            <MenuList>
-              {stashList &&
-                stashList.map((stash) => (
-                  <MenuItem
-                    key={stash?.id}
-                    onClick={() => setSelectedStashId(stash.id)}
-                  >
-                    {stash?.name}
-                  </MenuItem>
-                ))}
-            </MenuList>
-          </Menu>
-          <Divider orientation="vertical" />
-          <ButtonGroup isAttached variant="outline">
-            <Button
-              isDisabled={isStashListLoading || !selectedStashId}
-              onClick={async () => {
-                const { stash } = await getRequest<{ stash: ExtendedStashTab }>(
-                  `stash/Crucible/${selectedStashId}`,
-                  token
-                );
-                console.log(stash);
-                setStash(stash);
-              }}
-            >
-              Take Snapshot
-            </Button>
+    <>
+      <Box bg={useColorModeValue("gray.100", "gray.900")} px={4}>
+        <Flex h={14} alignItems={"center"} justifyContent={"space-between"}>
+          <Box />
+          <Flex
+            h={14}
+            alignItems={"center"}
+            justifyContent={"center"}
+            gap="5px"
+          >
+            <Menu>
+              <MenuButton
+                as={Button}
+                variant="outline"
+                rightIcon={<ChevronDownIcon />}
+              >
+                {selectedStashId
+                  ? stashList.find((stash) => stash.id === selectedStashId)
+                      ?.name
+                  : "Select..."}
+              </MenuButton>
+              <MenuList>
+                {stashList &&
+                  stashList.map((stash) => (
+                    <MenuItem
+                      key={stash?.id}
+                      onClick={() => setSelectedStashId(stash.id)}
+                    >
+                      {stash?.name}
+                    </MenuItem>
+                  ))}
+              </MenuList>
+            </Menu>
+            <Divider orientation="vertical" />
+            <ButtonGroup isAttached variant="outline">
+              <Button
+                isDisabled={isStashListLoading || !selectedStashId}
+                onClick={async () => {
+                  const { stash } = await getRequest<{
+                    stash: ExtendedStashTab;
+                  }>(`stash/Crucible/${selectedStashId}`, token);
+                  console.log(stash);
+                  setStash(stash);
+                }}
+              >
+                Take Snapshot
+              </Button>
+              <IconButton
+                aria-label="Delete snapshots"
+                colorScheme="red"
+                icon={<DeleteIcon />}
+              />
+            </ButtonGroup>
+            <Divider orientation="vertical" />
             <IconButton
-              aria-label="Delete snapshots"
-              colorScheme="red"
-              icon={<DeleteIcon />}
+              variant="outline"
+              icon={<BellIcon />}
+              aria-label="Show notifications"
             />
-          </ButtonGroup>
-          <Divider orientation="vertical" />
-          <IconButton
-            variant="outline"
-            icon={<BellIcon />}
-            aria-label="Show notifications"
-          />
-          <Divider orientation="vertical" />
-          <IconButton
-            variant="outline"
-            icon={<BellIcon />}
-            aria-label="Show notifications"
-          />
+            <Divider orientation="vertical" />
+            <IconButton
+              variant="outline"
+              icon={<BellIcon />}
+              aria-label="Show notifications"
+            />
+          </Flex>
         </Flex>
-      </Flex>
-    </Box>
+      </Box>
+    </>
   );
 };
 
