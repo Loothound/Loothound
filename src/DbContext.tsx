@@ -1,16 +1,15 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import Database from "tauri-plugin-sql-api";
-import { Database as DatabaseType } from "./database/model";
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Database as DatabaseType } from './database/model';
 import {
   Kysely,
   Migrator,
   SqliteAdapter,
   SqliteIntrospector,
   SqliteQueryCompiler,
-} from "kysely";
-import { TauriDriver } from "./database/driver";
-import LoothoundMigrationProvider from "./database/migrations";
-import { Spinner } from "@chakra-ui/react";
+} from 'kysely';
+import { TauriDriver } from './database/driver';
+import LoothoundMigrationProvider from './database/migrations';
+import { Spinner } from '@chakra-ui/react';
 
 export type DbContextType = Kysely<DatabaseType> | undefined;
 const DbContext = createContext<DbContextType>(undefined);
@@ -57,7 +56,7 @@ export function DbContextProvider({ children }: { children: React.ReactNode }) {
 export default function useDb() {
   const ctx = useContext(DbContext);
   if (!ctx) {
-    throw new Error("Used useDb outside of provider");
+    throw new Error('Used useDb outside of provider');
   }
   return ctx;
 }
