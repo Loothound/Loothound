@@ -1,46 +1,113 @@
+import { Group, Paper, SimpleGrid, Text, createStyles, rem } from '@mantine/core';
 import {
-  Card,
-  CardBody,
-  SimpleGrid,
-  Stat,
-  StatArrow,
-  StatHelpText,
-  StatLabel,
-  StatNumber,
-} from '@chakra-ui/react';
+	IconArrowDownRight,
+	IconArrowUpRight,
+	IconChartLine,
+	IconClockHour3,
+	IconCoin,
+} from '@tabler/icons-react';
+
+interface StatsGridData {
+	title: string;
+	icon: keyof typeof icons;
+	value: string;
+	diff: number;
+}
+
+const icons = {
+	netWorth: IconCoin,
+	income: IconChartLine,
+	snapshot: IconClockHour3,
+};
+
+const data: StatsGridData[] = [
+	{
+		title: 'Net Worth',
+		icon: 'netWorth',
+		value: '69',
+		diff: 24,
+	},
+	{
+		title: 'Income',
+		icon: 'income',
+		value: '420',
+		diff: 24,
+	},
+	{
+		title: 'Snapshot Count',
+		icon: 'snapshot',
+		value: '1',
+		diff: 0,
+	},
+];
 
 export function SampleStats() {
-  return (
-    <SimpleGrid columns={3} spacing={10} px={5} my={4}>
-      <Card flexGrow={1}>
-        <CardBody>
-          <Stat>
-            <StatLabel>Net Worth</StatLabel>
-            <StatNumber>69 div</StatNumber>
-            <StatHelpText>
-              <StatArrow type="increase" />2 div
-            </StatHelpText>
-          </Stat>
-        </CardBody>
-      </Card>
-      <Card>
-        <CardBody>
-          <Stat>
-            <StatLabel>Income</StatLabel>
-            <StatNumber>42 div / h</StatNumber>
-            <StatHelpText>Based on last hour</StatHelpText>
-          </Stat>
-        </CardBody>
-      </Card>
-      <Card>
-        <CardBody>
-          <Stat>
-            <StatLabel>Snapshot Count</StatLabel>
-            <StatNumber>1</StatNumber>
-            <StatHelpText>12 seconds ago</StatHelpText>
-          </Stat>
-        </CardBody>
-      </Card>
-    </SimpleGrid>
-  );
+	const { classes } = useStyles();
+	const stats = data.map((stat) => {
+		const Icon = icons[stat.icon];
+		const DiffIcon = stat.diff > 0 ? IconArrowUpRight : IconArrowDownRight;
+
+		return (
+			<Paper withBorder p="md" radius="md" key={stat.title}>
+				<Group position="apart">
+					<Text size="xs" color="dimmed" className={classes.title}>
+						{stat.title}
+					</Text>
+					<Icon className={classes.icon} size="24px" stroke={1.5} />
+				</Group>
+
+				<Group align="flex-end" spacing="xs" mt={36}>
+					<Text className={classes.value}>{stat.value}</Text>
+					<Text color={stat.diff > 0 ? 'teal' : 'red'} fz="sm" fw={500} className={classes.diff}>
+						<span>{stat.diff}%</span>
+						<DiffIcon size="16px" stroke={1.5} />
+					</Text>
+				</Group>
+
+				<Text fz="xs" c="dimmed" mt={7}>
+					Compared to previous snapshot
+				</Text>
+			</Paper>
+		);
+	});
+	return (
+		<div className={classes.root}>
+			<SimpleGrid className={classes.grid} cols={3}>
+				{stats}
+			</SimpleGrid>
+		</div>
+	);
 }
+
+const useStyles = createStyles((theme) => ({
+	root: {
+		padding: `0 calc(${theme.spacing.xl} * 1.5)`,
+		display: 'flex',
+		width: '100%',
+	},
+
+	value: {
+		fontSize: rem(24),
+		fontWeight: 700,
+		lineHeight: 1,
+	},
+
+	grid: {
+		width: '100%',
+	},
+
+	diff: {
+		lineHeight: 1,
+		display: 'flex',
+		alignItems: 'center',
+	},
+
+	icon: {
+		color: theme.colorScheme === 'dark' ? theme.colors.dark[3] : theme.colors.gray[4],
+	},
+
+	title: {
+		fontWeight: 700,
+		textTransform: 'uppercase',
+	},
+}));
