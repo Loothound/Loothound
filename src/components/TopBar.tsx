@@ -1,10 +1,9 @@
 import { ActionIcon, Box, Button, Flex, Paper, Select, createStyles } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import useDb from '../DbContext';
-import { ExtendedStashTab } from '../types/types';
+import { useEffect, useState } from 'react';
 import ProfileModal from './ProfileModal';
+import { getProfiles } from '../api/db';
 
 const TopBar = () => {
 	const { classes } = useStyles();
@@ -12,13 +11,10 @@ const TopBar = () => {
 	const [profiles, setProfiles] = useState<ProfileData[]>([]);
 	const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
 	const [isProfilesLoading, setisProfilesLoading] = useState(false);
-	const db = useDb();
 
 	useEffect(() => {
 		setisProfilesLoading(true);
-		db.selectFrom('profiles')
-			.selectAll()
-			.execute()
+		getProfiles()
 			.then((data) => setProfiles(data))
 			.finally(() => setisProfilesLoading(false));
 	}, []);

@@ -8,9 +8,11 @@ use url::Url;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
 use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, CsrfToken, HttpRequest, HttpResponse, PkceCodeChallenge,
-    RedirectUrl, Scope, TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl, Scope,
+    TokenUrl,
 };
+
+mod sql;
 
 #[command]
 async fn do_oauth(app: tauri::AppHandle, window: Window) -> Result<u16, String> {
@@ -63,7 +65,7 @@ async fn do_oauth(app: tauri::AppHandle, window: Window) -> Result<u16, String> 
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![do_oauth])
-        .plugin(tauri_plugin_sql::Builder::default().build())
+        .plugin(sql::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

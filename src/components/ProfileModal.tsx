@@ -1,8 +1,8 @@
-import { Box, Button, Flex, Modal, MultiSelect, Select, TextInput } from '@mantine/core';
+import { Button, Flex, Modal, MultiSelect, Select, TextInput } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import useDb from '../DbContext';
 import api from '../api/client';
 import { StashTab } from '../types/types';
+import { invoke } from '@tauri-apps/api/tauri';
 
 type Props = {
 	isOpen: boolean;
@@ -18,7 +18,6 @@ const ProfileModal = ({ isOpen, onClose }: Props) => {
 	const [values, setValues] = useState<string[]>([]);
 	const [stashList, setStashList] = useState<Option[]>([]);
 	const [isStashListLoading, setIsStashListLoading] = useState(false);
-	const db = useDb();
 
 	const handleChange = async (value: string[]) => {
 		console.log(value);
@@ -26,22 +25,8 @@ const ProfileModal = ({ isOpen, onClose }: Props) => {
 	};
 
 	const insertProfileTrx = async () => {
-		db.transaction().execute(async (trx) => {
-			const profile = await trx
-				.insertInto('profiles')
-				.values({ name: 'testProfile', league_id: '1', pricing_league: '1' })
-				.returningAll()
-				.executeTakeFirstOrThrow();
-
-			for (const stashId of values) {
-				const assoc = await trx
-					.insertInto('profile_stash_assoc')
-					.values({ profile_id: profile.id, stash_id: stashId })
-					.returningAll()
-					.executeTakeFirst();
-				console.log(profile, assoc);
-			}
-		});
+		// TODO: Lystina, please make this actually use the user-provided name lmao
+		await invoke('plugin:sql|create_profile', { profileName: 'RustTest', stashTabs: values });
 	};
 
 	useEffect(() => {
@@ -49,7 +34,17 @@ const ProfileModal = ({ isOpen, onClose }: Props) => {
 		api
 			.get<{ stashes: StashTab[] }>('stash/Crucible')
 			.then(({ data: { stashes } }) => {
-				const options = stashes.map((stash) => ({ label: stash.name, value: stash.id }));
+				const options = stashes.map((stash) => ({
+					label: stash.name,
+					value: stash.id,
+				}));
+				for (const s of stashes as StashTab[]) {
+					invoke('plugin:sql|insert_stash', {
+						stashId: s.id,
+						stashName: s.name,
+						stashType: s.type,
+					});
+				}
 				setStashList(options || []);
 			})
 			.finally(() => setIsStashListLoading(false));
