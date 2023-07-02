@@ -27,3 +27,4 @@ src-tauri/target
 
 stats.html
 vite.config.ts.timestamp*
+src-tauri/.env
