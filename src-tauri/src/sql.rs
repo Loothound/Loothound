@@ -183,7 +183,7 @@ async fn get_profiles(con: State<'_, DbCon>) -> Result<Vec<ProfileWithStashes>> 
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
-    let profiles = sqlx::query_as!(Profile, "SELECT * FROM profiles")
+    let profiles = sqlx::query_as::<_, Profile>("SELECT * FROM profiles")
         .fetch_all(pool)
         .await
         .map_err(Error::Sql)?;
@@ -244,15 +244,13 @@ async fn fetch_prices(con: State<'_, DbCon>) -> Result<i64> {
 
         for line in resp.lines.iter() {
             if let Some(receive) = &line.receive {
-                sqlx::query!(
-                    "INSERT INTO price (name, price, revision) VALUES (?, ?, ?)",
-                    line.currency_type_name,
-                    receive.value,
-                    next_rev
-                )
-                .execute(pool)
-                .await
-                .map_err(Error::Sql)?;
+                sqlx::query("INSERT INTO price (name, price, revision) VALUES (?, ?, ?)")
+                    .bind(&line.currency_type_name)
+                    .bind(receive.value)
+                    .bind(next_rev)
+                    .execute(pool)
+                    .await
+                    .map_err(Error::Sql)?;
             }
         }
     }
@@ -266,13 +264,13 @@ async fn fetch_prices(con: State<'_, DbCon>) -> Result<i64> {
 
         for line in resp.lines.iter() {
             let links = line.links.map(|n| if n == 6 { 1 } else { 0 }).unwrap_or(0);
-            sqlx::query!(
+            sqlx::query(
                 "INSERT INTO price (name, price, revision, fully_linked) VALUES (?, ?, ?, ?)",
-                line.name,
-                line.chaos_value,
-                next_rev,
-                links
             )
+            .bind(&line.name)
+            .bind(line.chaos_value)
+            .bind(next_rev)
+            .bind(links)
             .execute(pool)
             .await
             .map_err(Error::Sql)?;
