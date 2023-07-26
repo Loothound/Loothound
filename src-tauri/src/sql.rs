@@ -32,8 +32,8 @@ enum Error {
     #[error("Database not loaded")]
     DatabaseNotLoaded,
 
-    #[error("unsupported datatype: {0}")]
-    UnsupportedDatatype(String),
+    #[error(transparent)]
+    Network(#[from] reqwest::Error),
 }
 
 impl Serialize for Error {
@@ -46,6 +46,66 @@ impl Serialize for Error {
 }
 
 type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Sparkline {
+    data: Vec<f64>,
+    total_change: f64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ItemLine {
+    name: String,
+    chaos_value: f64,
+    links: Option<isize>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct NinjaItemResponse {
+    lines: Vec<ItemLine>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CurrencyReceive {
+    value: f64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CurrencyLine {
+    currency_type_name: String,
+    receive: Option<CurrencyReceive>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct NinjaCurrencyResponse {
+    lines: Vec<CurrencyLine>,
+}
+
+static CURRENCY_CATEGORIES: [&str; 2] = ["Currency", "Fragment"];
+static ITEM_CATEGORIES: [&str; 18] = [
+    "DivinationCard",
+    "Artifact",
+    "Oil",
+    "Incubator",
+    "UniqueWeapon",
+    "UniqueArmour",
+    "UniqueAccessory",
+    "UniqueFlask",
+    "UniqueJewel",
+    "UniqueMap",
+    "DeliriumOrb",
+    "Invitation",
+    "Scarab",
+    "Fossil",
+    "Resonator",
+    "Beast",
+    "Essence",
+    "Vial",
+];
+static LEAGUE: &str = "Crucible";
 
 fn app_path<R: Runtime>(app: &AppHandle<R>) -> PathBuf {
     app.path_resolver()
@@ -119,14 +179,137 @@ async fn create_profile(
 }
 
 #[tauri::command]
-async fn get_profiles(con: State<'_, DbCon>) -> Result<Vec<Profile>> {
+async fn get_profiles(con: State<'_, DbCon>) -> Result<Vec<ProfileWithStashes>> {
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
-    sqlx::query_as!(Profile, "SELECT * FROM profiles")
+    let profiles = sqlx::query_as!(Profile, "SELECT * FROM profiles")
         .fetch_all(pool)
         .await
+        .map_err(Error::Sql)?;
+
+    let mut profiles_with_stashes = Vec::new();
+
+    for profile in profiles.iter() {
+        let stashes = sqlx::query_as::<_, ProfileStashAssoc>(
+            "SELECT * FROM profile_stash_assoc WHERE profile_id = ?",
+        )
+        .bind(profile.id)
+        .fetch_all(pool)
+        .await
+        .map_err(Error::Sql)?;
+        profiles_with_stashes.push(ProfileWithStashes {
+            profile: profile.clone(),
+            stashes: stashes.into_iter().map(|s| s.stash_id).collect(),
+        })
+    }
+
+    Ok(profiles_with_stashes)
+}
+
+#[tauri::command]
+async fn new_snapshot(con: State<'_, DbCon>) -> Result<Snapshot> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    sqlx::query_as::<_, Snapshot>(
+        "INSERT INTO snapshots (stash_id, item_id, amount) VALUES (?, ?, ?) RETURNING *",
+    )
+    .bind("new_snapshot")
+    .bind(-1)
+    .bind(0)
+    .fetch_one(pool)
+    .await
+    .map_err(Error::Sql)
+}
+
+#[tauri::command]
+async fn fetch_prices(con: State<'_, DbCon>) -> Result<i64> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    let current_revision: (i64,) = sqlx::query_as("SELECT MAX(revision) as rev FROM price")
+        .fetch_one(pool)
+        .await
         .map_err(Error::Sql)
+        .unwrap_or((0,));
+    let next_rev = current_revision.0 + 1;
+
+    for currency_type in CURRENCY_CATEGORIES {
+        let url = format!(
+            "https://poe.ninja/api/data/currencyoverview?league={}&type={}",
+            LEAGUE, currency_type
+        );
+        let resp: NinjaCurrencyResponse = reqwest::get(url).await?.json().await?;
+
+        for line in resp.lines.iter() {
+            if let Some(receive) = &line.receive {
+                sqlx::query!(
+                    "INSERT INTO price (name, price, revision) VALUES (?, ?, ?)",
+                    line.currency_type_name,
+                    receive.value,
+                    next_rev
+                )
+                .execute(pool)
+                .await
+                .map_err(Error::Sql)?;
+            }
+        }
+    }
+
+    for item_type in ITEM_CATEGORIES {
+        let url = format!(
+            "https://poe.ninja/api/data/itemoverview?league={}&type={}",
+            LEAGUE, item_type
+        );
+        let resp: NinjaItemResponse = reqwest::get(url).await?.json().await?;
+
+        for line in resp.lines.iter() {
+            let links = line.links.map(|n| if n == 6 { 1 } else { 0 }).unwrap_or(0);
+            sqlx::query!(
+                "INSERT INTO price (name, price, revision, fully_linked) VALUES (?, ?, ?, ?)",
+                line.name,
+                line.chaos_value,
+                next_rev,
+                links
+            )
+            .execute(pool)
+            .await
+            .map_err(Error::Sql)?;
+        }
+    }
+
+    Ok(current_revision.0)
+}
+
+#[tauri::command]
+async fn check_price(con: State<'_, DbCon>, name: String) -> Result<f64> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    let current_revision: (i64,) = sqlx::query_as("SELECT MAX(revision) as rev FROM price")
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)
+        .unwrap_or((0,));
+
+    let price = sqlx::query_as::<_, Price>(
+        "SELECT * FROM price WHERE name LIKE ? AND revision = ? LIMIT 1",
+    )
+    .bind(name)
+    .bind(current_revision.0)
+    .fetch_one(pool)
+    .await
+    .map_err(Error::Sql)
+    .unwrap_or(Price {
+        id: 0,
+        name: "".into(),
+        price: 0.0,
+        revision: 0,
+        fully_linked: false,
+    });
+
+    Ok(price.price)
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
@@ -156,7 +339,10 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             get_stashes,
             create_profile,
             insert_stash,
-            get_profiles
+            get_profiles,
+            new_snapshot,
+            fetch_prices,
+            check_price
         ])
         .build()
 }

@@ -25,7 +25,7 @@ async fn do_oauth(app: tauri::AppHandle, window: Window) -> Result<u16, String> 
     .set_redirect_uri(RedirectUrl::new("http://localhost:61360/auth".to_string()).unwrap());
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-    let (auth_url, csrf_token) = client
+    let (auth_url, _) = client
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("account:stashes".to_string()))
         .add_scope(Scope::new("account:league_accounts".to_string()))
