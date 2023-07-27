@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import useAuth from '../AuthContext';
 
 async function login() {
-	invoke('do_oauth');
+	invoke('plugin:oauth|do_oauth');
 }
 
 export default function Login() {
