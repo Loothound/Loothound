@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api';
-import { Stash, Profile } from '../bindings';
+import { Stash, Profile, ProfileWithStashes } from '../bindings';
 
 export * from '../bindings';
 
@@ -19,6 +19,6 @@ export async function createProfile(profileName: string, stashTabs: string[]): P
 	return await invoke('plugin:sql|create_profile', { profileName, stashTabs });
 }
 
-export async function getProfiles(): Promise<Profile[]> {
+export async function getProfiles(): Promise<ProfileWithStashes[]> {
 	return await invoke('plugin:sql|get_profiles');
 }

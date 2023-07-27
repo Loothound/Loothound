@@ -7,6 +7,8 @@ use std::{
 fn main() {
     tauri_build::build();
 
+    println!("cargo:rerun-if-changed=src/sql/model.rs");
+
     let exports: Vec<_> = fs::read_dir("../src/bindings")
         .unwrap()
         .filter_map(Result::ok)

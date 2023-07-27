@@ -1,93 +1,91 @@
 import { Box, Table, createStyles } from '@mantine/core';
-import { Line } from 'react-chartjs-2';
-import {
-	CategoryScale,
-	Chart as ChartJS,
-	Legend,
-	LineElement,
-	LinearScale,
-	PointElement,
-	Title,
-	Tooltip,
-} from 'chart.js';
 import { Item } from '../types/types';
+import { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api';
+import { DataTable, DataTableSortStatus } from 'mantine-datatable';
+import { sortBy } from 'lodash';
 
 type Props = {
 	items: Item[];
 };
 
-export const options = {
-	events: [],
-	responsive: true,
-	borderWidth: 1.5,
-	plugins: {
-		legend: {
-			display: false,
-		},
-		title: {
-			display: false,
-		},
-	},
-	scales: {
-		x: {
-			display: false,
-		},
-		y: {
-			display: false,
-		},
-	},
-};
+interface ItemWithPrice {
+	item: Item;
+	price: number;
+}
 
-const labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
-
-export const data = {
-	labels,
-	datasets: [
-		{
-			label: 'Dataset 1',
-			data: labels.map(() => 1),
-			borderColor: 'rgb(255, 99, 132)',
-			backgroundColor: 'rgba(255, 99, 132, 0.5)',
-			fill: false,
-			pointRadius: 0,
-			spanGaps: true,
-			tension: 0.2,
-		},
-	],
-};
-
-const ItemTable = ({ items }: Props) => {
+const ItemTable = ({ items, setTotal }: Props) => {
 	const { classes } = useStyles();
-	ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+	const [itemsWithPrice, setItemsWithPrice] = useState<ItemWithPrice[]>([]);
+	const [records, setRecords] = useState<
+		{
+			name: string;
+			type: string;
+			amount: number;
+			value: number;
+		}[]
+	>([]);
+	const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
+		columnAccessor: 'name',
+		direction: 'asc',
+	});
+
+	useEffect(() => {
+		(async () => {
+			const i = [];
+			for (const item of items) {
+				const itemWithPrice: ItemWithPrice = { item: item, price: 0 };
+				const name = item.name.length > 0 ? item.name : item.typeLine;
+				itemWithPrice.price = await invoke('plugin:sql|check_price', { name: name });
+				i.push(itemWithPrice);
+			}
+			setItemsWithPrice(i);
+		})();
+	}, [items]);
+
+	useEffect(() => {
+		const r = [];
+		let total = 0;
+		for (const i of itemsWithPrice) {
+			const { item, price } = i;
+			r.push({
+				name: item.name.length > 0 ? item.name : item.typeLine,
+				type: item.baseType,
+				amount: item.stackSize ? item.stackSize : 1,
+				value: Math.round(
+					(item.typeLine === 'Chaos Orb' ? 1 : price) * (item.stackSize ? item.stackSize : 1)
+				),
+			});
+			total += Math.round(price * (item.stackSize ? item.stackSize : 1));
+		}
+		setRecords(r);
+		const divPrice = itemsWithPrice.find((x) => x.item.typeLine === 'Divine Orb')?.price;
+		setTotal((total / divPrice).toFixed(2));
+	}, [itemsWithPrice]);
+
+	useEffect(() => {
+		const data = sortBy(records, sortStatus.columnAccessor);
+		setRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
+	}, [sortStatus]);
 
 	return (
 		<Box className={classes.root}>
-			<Table>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Type</th>
-						<th>Amount</th>
-						<th>Sparkline</th>
-					</tr>
-				</thead>
-				<tbody>
-					{items.map((item) => {
-						return (
-							<tr key={item.id}>
-								<td>{item.typeLine}</td>
-								<td>{item.baseType}</td>
-								<td>{item.stackSize}</td>
-								<td>
-									<div style={{ height: '50px' }}>
-										<Line options={options} data={data} />
-									</div>
-								</td>
-							</tr>
-						);
-					})}
-				</tbody>
-			</Table>
+			<DataTable
+				withBorder
+				borderRadius="sm"
+				withColumnBorders
+				striped
+				highlightOnHover
+				records={records}
+				columns={[
+					{ accessor: 'name', sortable: true },
+					{ accessor: 'type' },
+					{ accessor: 'amount', sortable: true },
+					{ accessor: 'value', sortable: true },
+				]}
+				sortStatus={sortStatus}
+				onSortStatusChange={setSortStatus}
+			/>
 		</Box>
 	);
 };

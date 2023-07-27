@@ -4,11 +4,14 @@ import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import ProfileModal from './ProfileModal';
 import { getProfiles } from '../api/db';
+import api from '../api/client';
+import { ExtendedStashTab } from '../types/types';
+import { ProfileWithStashes } from '../api/db';
 
-const TopBar = () => {
+const TopBar = ({ setItems }) => {
 	const { classes } = useStyles();
 	const [opened, { open, close }] = useDisclosure(false);
-	const [profiles, setProfiles] = useState<ProfileData[]>([]);
+	const [profiles, setProfiles] = useState<ProfileWithStashes[]>([]);
 	const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
 	const [isProfilesLoading, setisProfilesLoading] = useState(false);
 
@@ -29,20 +32,25 @@ const TopBar = () => {
 							value={selectedProfile}
 							onChange={setSelectedProfile}
 							placeholder={profiles.length < 1 ? 'No profiles found' : 'Pick a profile'}
-							data={profiles.map((profile) => ({ label: profile.name, value: String(profile.id) }))}
+							data={profiles.map((profile) => ({
+								label: profile.profile.name,
+								value: String(profile.profile.id),
+							}))}
 							disabled={profiles.length < 1 || isProfilesLoading}
 						/>
 						<Button
-						// disabled={isStashListLoading || !selectedStashId}
-						// onClick={async () => {
-						// 	const {
-						// 		data: { stash },
-						// 	} = await api.get<{
-						// 		stash: ExtendedStashTab;
-						// 	}>(`stash/Crucible/${selectedStashId}`);
-						// 	console.log(stash);
-						// 	setStash(stash);
-						// }}
+							onClick={async () => {
+								const {
+									data: { stash },
+								} = await api.get<{
+									stash: ExtendedStashTab;
+								}>(
+									`stash/Crucible/${
+										profiles.find((x) => x.profile.id.toString() === selectedProfile)?.stashes[0]
+									}`
+								);
+								setItems(stash.items);
+							}}
 						>
 							Take Snapshot
 						</Button>
@@ -70,10 +78,3 @@ const useStyles = createStyles((theme) => ({
 }));
 
 export default TopBar;
-
-interface ProfileData {
-	id: number;
-	name: string;
-	league_id: string;
-	pricing_league: string;
-}

@@ -20,30 +20,32 @@ const icons = {
 	snapshot: IconClockHour3,
 };
 
-const data: StatsGridData[] = [
-	{
-		title: 'Net Worth',
-		icon: 'netWorth',
-		value: '69',
-		diff: 24,
-	},
-	{
-		title: 'Income',
-		icon: 'income',
-		value: '420',
-		diff: 24,
-	},
-	{
-		title: 'Snapshot Count',
-		icon: 'snapshot',
-		value: '1',
-		diff: 0,
-	},
-];
+function getData(total): StatsGridData[] {
+	return [
+		{
+			title: 'Net Worth',
+			icon: 'netWorth',
+			value: total.toString() + ' div',
+			diff: 24,
+		},
+		{
+			title: 'Income',
+			icon: 'income',
+			value: '420',
+			diff: 24,
+		},
+		{
+			title: 'Snapshot Count',
+			icon: 'snapshot',
+			value: '1',
+			diff: 0,
+		},
+	];
+}
 
-export function SampleStats() {
+export function SampleStats({ total }) {
 	const { classes } = useStyles();
-	const stats = data.map((stat) => {
+	const stats = getData(total).map((stat) => {
 		const Icon = icons[stat.icon];
 		const DiffIcon = stat.diff > 0 ? IconArrowUpRight : IconArrowDownRight;
 
