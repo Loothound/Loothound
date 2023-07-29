@@ -4,7 +4,7 @@ import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import ProfileModal from './ProfileModal';
 import { getProfiles } from '../api/db';
-import api from '../api/client';
+import api, { fetch_stashes } from '../api/client';
 import { ExtendedStashTab } from '../types/types';
 import { ProfileWithStashes } from '../api/db';
 
@@ -40,16 +40,11 @@ const TopBar = ({ setItems }) => {
 						/>
 						<Button
 							onClick={async () => {
-								const {
-									data: { stash },
-								} = await api.get<{
-									stash: ExtendedStashTab;
-								}>(
-									`stash/Crucible/${
-										profiles.find((x) => x.profile.id.toString() === selectedProfile)?.stashes[0]
-									}`
+								const s = await fetch_stashes(
+									profiles.find((x) => x.profile.id.toString() === selectedProfile)
+										?.stashes as string[]
 								);
-								setItems(stash.items);
+								setItems(s.flatMap((x) => x.items));
 							}}
 						>
 							Take Snapshot

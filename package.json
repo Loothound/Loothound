@@ -23,6 +23,7 @@
     "chart.js": "^4.3.0",
     "dataclass": "^2.1.1",
     "kysely": "^0.25.0",
+    "limiter": "^2.1.0",
     "lodash": "^4.17.21",
     "mantine-datatable": "^2.9.1",
     "prettier": "^2.8.8",
