@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/tauri';
-import { ExtendedStashTab, StashTab } from '../types/types';
+import { StashTab } from '../types/types';
 import api from './client';
 
 export const fetchStashes = async () => {

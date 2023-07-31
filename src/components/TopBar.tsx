@@ -5,9 +5,6 @@ import { useState } from 'react';
 import { useGetProfiles, useGetStashes } from '../services/services';
 import { Item } from '../types/types';
 import ProfileModal from './ProfileModal';
-import { getProfiles } from '../api/db';
-import { ExtendedStashTab } from '../types/types';
-import { ProfileWithStashes } from '../api/db';
 
 interface TopBarProps {
 	setItems: React.Dispatch<Item[]>;
