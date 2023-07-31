@@ -20,12 +20,13 @@ const icons = {
 	snapshot: IconClockHour3,
 };
 
-function getData(total): StatsGridData[] {
+function getData(total: string | number): StatsGridData[] {
+	console.log(total);
 	return [
 		{
 			title: 'Net Worth',
 			icon: 'netWorth',
-			value: total.toString() + ' div',
+			value: total + ' div',
 			diff: 24,
 		},
 		{
@@ -43,7 +44,7 @@ function getData(total): StatsGridData[] {
 	];
 }
 
-export function SampleStats({ total }) {
+export function SampleStats({ total }: { total: string }) {
 	const { classes } = useStyles();
 	const stats = getData(total).map((stat) => {
 		const Icon = icons[stat.icon];
