@@ -13,13 +13,3 @@ export const fetchStashes = async () => {
 	}
 	return data;
 };
-
-export const getSingleStash = async (stashId: string) => {
-	const {
-		data: { stash },
-	} = await api.get<{
-		stash: ExtendedStashTab;
-	}>(`stash/Crucible/${stashId}`);
-
-	return stash;
-};

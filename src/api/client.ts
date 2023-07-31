@@ -33,7 +33,7 @@ client.interceptors.response.use(
 
 const limiters: Record<string, RateLimiter[]> = {};
 
-export async function fetch_stashes(ids: string[]): Promise<ExtendedStashTab[]> {
+export async function fetchMultipleStashes(ids: string[]): Promise<ExtendedStashTab[]> {
 	const policy = 'stash-request-limit';
 
 	const tabs: ExtendedStashTab[] = [];
@@ -76,6 +76,8 @@ export async function fetch_stashes(ids: string[]): Promise<ExtendedStashTab[]> 
 		const data = await fetch(id);
 		tabs.push(data);
 	}
+
+	console.log(tabs);
 
 	return tabs;
 }

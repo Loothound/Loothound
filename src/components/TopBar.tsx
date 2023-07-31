@@ -2,11 +2,10 @@ import { ActionIcon, Button, Flex, Paper, Select, Text, createStyles } from '@ma
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useGetProfiles, useGetSingleStash } from '../services/services';
+import { useGetProfiles, useGetStashes } from '../services/services';
 import { Item } from '../types/types';
 import ProfileModal from './ProfileModal';
 import { getProfiles } from '../api/db';
-import api, { fetch_stashes } from '../api/client';
 import { ExtendedStashTab } from '../types/types';
 import { ProfileWithStashes } from '../api/db';
 
@@ -24,15 +23,19 @@ const TopBar = ({ setItems }: TopBarProps) => {
 
 	const selectedProfileStashes = profilesData.find(
 		(x) => x.profile.id.toString() === selectedProfile
-	)?.stashes[0];
+	)?.stashes;
 
-	const { data: stashData, isFetching: isStashDataFetching } = useGetSingleStash(
-		selectedProfileStashes || '',
+	const { data: stashData, isFetching: isStashDataFetching } = useGetStashes(
+		selectedProfileStashes || [],
 		{
 			enabled: shouldSearch && !!selectedProfileStashes,
 			onSuccess: () => {
 				setShouldSearch(false);
-				setItems(stashData?.items || []);
+				if(stashData === undefined) {
+					return;
+				}
+				const items = stashData?.flatMap((x) => x.items) as Item[];
+				setItems(items || []);
 			},
 		}
 	);
