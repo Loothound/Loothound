@@ -7,8 +7,7 @@ import { Item } from './types/types';
 
 function App() {
 	const [items, setItems] = useState<Item[]>([]);
-	const [total, setTotal] = useState<string>('0');
-
+	const [total, setTotal] = useState(0);
 	return (
 		<>
 			<TopBar setItems={setItems} />

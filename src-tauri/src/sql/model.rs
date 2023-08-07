@@ -36,18 +36,41 @@ pub struct ProfileStashAssoc {
 #[ts(export, export_to = "../src/bindings/")]
 pub struct Snapshot {
     pub id: i64,
-    pub stash_id: String,
-    pub item_id: i64,
-    pub amount: i64,
+    pub profile_id: i64,
+    #[ts(type = "number")]
+    pub timestamp: sqlx::types::chrono::NaiveDateTime,
+    pub pricing_revision: i64,
 }
 
-#[derive(FromRow, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, TS)]
-#[ts(export, export_to = "../src/bindings/")]
-pub struct Item {
+#[derive(FromRow, Debug, PartialEq, Eq)]
+pub struct ItemRow {
     pub id: i64,
+    pub snapshot_id: i64,
+    pub stash_id: String,
+    pub data: sqlx::types::Json<Item>,
+}
+
+#[derive(Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, TS)]
+#[ts(export, export_to = "../src/bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct Item {
+    pub verified: bool,
+    pub w: i64,
+    pub h: i64,
+    pub icon: String,
+    pub support: Option<bool>,
+    pub stack_size: Option<i64>,
+    pub max_stack_size: Option<i64>,
+    pub stack_size_text: Option<String>,
+    pub league: Option<String>,
+    pub id: Option<String>,
+    pub fractured: Option<bool>,
+    pub synthesized: Option<bool>,
+    pub name: String,
+    pub type_line: String,
     pub base_type: String,
-    pub base_line: String,
-    pub raw_data: String,
+    pub identified: bool,
+    pub item_level: Option<i64>,
 }
 
 #[derive(FromRow, Debug, PartialEq, serde::Serialize, serde::Deserialize, TS)]

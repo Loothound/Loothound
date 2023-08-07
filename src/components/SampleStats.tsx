@@ -7,6 +7,10 @@ import {
 	IconCoin,
 } from '@tabler/icons-react';
 
+type Props = {
+	total: number;
+};
+
 interface StatsGridData {
 	title: string;
 	icon: keyof typeof icons;
@@ -20,13 +24,13 @@ const icons = {
 	snapshot: IconClockHour3,
 };
 
-function getData(total: string | number): StatsGridData[] {
+function getData(total: number): StatsGridData[] {
 	console.log(total);
 	return [
 		{
 			title: 'Net Worth',
 			icon: 'netWorth',
-			value: total + ' div',
+			value: total.toFixed(2) + ' div',
 			diff: 24,
 		},
 		{
@@ -44,7 +48,7 @@ function getData(total: string | number): StatsGridData[] {
 	];
 }
 
-export function SampleStats({ total }: { total: string }) {
+export function SampleStats({ total }: Props) {
 	const { classes } = useStyles();
 	const stats = getData(total).map((stat) => {
 		const Icon = icons[stat.icon];

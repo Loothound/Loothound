@@ -7,7 +7,7 @@ import { Item } from '../types/types';
 
 type Props = {
 	items: Item[];
-	setTotal: React.Dispatch<string>;
+	setTotal: React.Dispatch<React.SetStateAction<number>>;
 };
 
 interface ItemWithPrice {
@@ -60,8 +60,8 @@ const ItemTable = ({ items, setTotal }: Props) => {
 			total += Math.round(price * (item.stackSize ? item.stackSize : 1));
 		}
 		setRecords(r);
-		const divPrice = itemsWithPrice.find((x) => x.item.typeLine === 'Divine Orb')?.price || 1;
-		setTotal((total / divPrice).toFixed(2));
+		const divPrice = itemsWithPrice.find((x) => x.item.typeLine === 'Divine Orb')?.price;
+		setTotal(total / (divPrice || 1));
 	}, [itemsWithPrice]);
 
 	useEffect(() => {
