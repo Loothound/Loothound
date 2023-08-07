@@ -1,7 +1,9 @@
-import { ActionIcon, Box, Button, Flex, Paper, Select, createStyles } from '@mantine/core';
+import { ActionIcon, Button, Flex, Paper, Select, Text, createStyles } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useGetProfiles, useGetSingleStash } from '../services/services';
+import { Item } from '../types/types';
 import ProfileModal from './ProfileModal';
 import { getProfiles } from '../api/db';
 import api, { fetch_stashes } from '../api/client';
@@ -16,32 +18,45 @@ type Props = {
 const TopBar = ({ setItems }: Props) => {
 	const { classes } = useStyles();
 	const [opened, { open, close }] = useDisclosure(false);
-	const [profiles, setProfiles] = useState<ProfileWithStashes[]>([]);
 	const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
-	const [isProfilesLoading, setisProfilesLoading] = useState(false);
+	const [shouldSearch, setShouldSearch] = useState(false);
 
-	useEffect(() => {
-		setisProfilesLoading(true);
-		getProfiles()
-			.then((data) => setProfiles(data))
-			.finally(() => setisProfilesLoading(false));
-	}, []);
+	const { data: profilesData = [], isLoading: isProfilesLoading } = useGetProfiles();
+
+	const selectedProfileStashes = profilesData.find(
+		(x) => x.profile.id.toString() === selectedProfile
+	)?.stashes[0];
+
+	const { data: stashData, isFetching: isStashDataFetching } = useGetSingleStash(
+		selectedProfileStashes || '',
+		{
+			enabled: shouldSearch && !!selectedProfileStashes,
+			onSuccess: () => {
+				setShouldSearch(false);
+				setItems(stashData?.items || []);
+			},
+		}
+	);
 
 	return (
 		<>
 			<Paper className={classes.root}>
 				<Flex align={'center'} justify={'space-between'}>
-					<Box />
+					<Flex align={'center'} gap="xs">
+						<Text fz="xl" fw="bold">
+							LootHound
+						</Text>
+					</Flex>
 					<Flex align={'center'} justify={'center'} gap="12px">
 						<Select
 							value={selectedProfile}
 							onChange={setSelectedProfile}
-							placeholder={profiles.length < 1 ? 'No profiles found' : 'Pick a profile'}
-							data={profiles.map((profile) => ({
-								label: profile.profile.name,
-								value: String(profile.profile.id),
+							placeholder={profilesData.length < 1 ? 'No profiles found' : 'Pick a profile'}
+							data={profilesData.map(({ profile }) => ({
+								label: profile.name,
+								value: String(profile.id),
 							}))}
-							disabled={profiles.length < 1 || isProfilesLoading}
+							disabled={profilesData.length < 1 || isProfilesLoading}
 						/>
 						<Button
 							onClick={async () => {
@@ -66,6 +81,7 @@ const TopBar = ({ setItems }: Props) => {
 								const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
 								setItems(i);
 							}}
+							disabled={isStashDataFetching}
 						>
 							Take Snapshot
 						</Button>

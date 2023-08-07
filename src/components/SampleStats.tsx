@@ -25,6 +25,7 @@ const icons = {
 };
 
 function getData(total: number): StatsGridData[] {
+	console.log(total);
 	return [
 		{
 			title: 'Net Worth',

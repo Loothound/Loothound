@@ -1,7 +1,8 @@
+import { MantineProvider } from '@mantine/core';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { MantineProvider } from '@mantine/core';
 import App from './App';
 import { OAuthProvider } from './AuthContext';
 import Login from './pages/Login';
@@ -18,12 +19,16 @@ const router = createBrowserRouter([
 	},
 ]);
 
+const queryClient = new QueryClient();
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 	<React.StrictMode>
-		<MantineProvider theme={theme} withGlobalStyles withNormalizeCSS>
-			<OAuthProvider>
-				<RouterProvider router={router} />
-			</OAuthProvider>
-		</MantineProvider>
+		<QueryClientProvider client={queryClient}>
+			<MantineProvider theme={theme} withGlobalStyles withNormalizeCSS>
+				<OAuthProvider>
+					<RouterProvider router={router} />
+				</OAuthProvider>
+			</MantineProvider>
+		</QueryClientProvider>
 	</React.StrictMode>
 );

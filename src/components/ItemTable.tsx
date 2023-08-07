@@ -1,9 +1,9 @@
-import { Box, Table, createStyles } from '@mantine/core';
-import { Item } from '../types/types';
-import { useEffect, useState } from 'react';
+import { Box, createStyles } from '@mantine/core';
 import { invoke } from '@tauri-apps/api';
-import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { sortBy } from 'lodash';
+import { DataTable, DataTableSortStatus } from 'mantine-datatable';
+import { useEffect, useState } from 'react';
+import { Item } from '../types/types';
 
 type Props = {
 	items: Item[];
@@ -74,10 +74,12 @@ const ItemTable = ({ items, setTotal }: Props) => {
 			<DataTable
 				withBorder
 				borderRadius="sm"
+				mt="sm"
 				withColumnBorders
 				striped
 				highlightOnHover
 				records={records}
+				minHeight={200}
 				columns={[
 					{ accessor: 'name', sortable: true },
 					{ accessor: 'type' },
