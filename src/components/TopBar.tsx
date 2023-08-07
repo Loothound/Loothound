@@ -5,10 +5,15 @@ import { useEffect, useState } from 'react';
 import ProfileModal from './ProfileModal';
 import { getProfiles } from '../api/db';
 import api, { fetch_stashes } from '../api/client';
-import { ExtendedStashTab } from '../types/types';
+import { ExtendedStashTab, Item } from '../types/types';
 import { ProfileWithStashes } from '../api/db';
+import { invoke } from '@tauri-apps/api';
 
-const TopBar = ({ setItems }) => {
+type Props = {
+	setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+};
+
+const TopBar = ({ setItems }: Props) => {
 	const { classes } = useStyles();
 	const [opened, { open, close }] = useDisclosure(false);
 	const [profiles, setProfiles] = useState<ProfileWithStashes[]>([]);
@@ -40,11 +45,26 @@ const TopBar = ({ setItems }) => {
 						/>
 						<Button
 							onClick={async () => {
+								const snapshot = await invoke('plugin:sql|new_snapshot', {
+									profileId: parseInt(selectedProfile as string),
+								});
+
 								const s = await fetch_stashes(
 									profiles.find((x) => x.profile.id.toString() === selectedProfile)
 										?.stashes as string[]
 								);
-								setItems(s.flatMap((x) => x.items));
+
+								for (const stashtab of s) {
+									console.log(stashtab.items);
+									await invoke('plugin:sql|add_items_to_snapshot', {
+										snapshot: snapshot,
+										items: stashtab.items,
+										stashId: stashtab.id,
+									});
+								}
+
+								const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
+								setItems(i);
 							}}
 						>
 							Take Snapshot

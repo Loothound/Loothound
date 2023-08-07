@@ -208,19 +208,64 @@ async fn get_profiles(con: State<'_, DbCon>) -> Result<Vec<ProfileWithStashes>> 
 }
 
 #[tauri::command]
-async fn new_snapshot(con: State<'_, DbCon>) -> Result<Snapshot> {
+async fn new_snapshot(con: State<'_, DbCon>, profile_id: i64) -> Result<Snapshot> {
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
+    let pricing_revision = sqlx::query_as::<_, (i64,)>("SELECT MAX(revision) as rev FROM price")
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)?;
+
     sqlx::query_as::<_, Snapshot>(
-        "INSERT INTO snapshots (stash_id, item_id, amount) VALUES (?, ?, ?) RETURNING *",
+        "INSERT INTO snapshots (profile_id, timestamp, pricing_revision) VALUES (?, ?, ?) RETURNING *",
     )
-    .bind("new_snapshot")
-    .bind(-1)
-    .bind(0)
+    .bind(profile_id)
+    .bind(chrono::Local::now().naive_utc())
+    .bind(pricing_revision.0)
     .fetch_one(pool)
     .await
     .map_err(Error::Sql)
+}
+
+#[tauri::command]
+async fn add_items_to_snapshot(
+    con: State<'_, DbCon>,
+    snapshot: Snapshot,
+    items: Vec<Item>,
+    stash_id: String,
+) -> Result<()> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+    let snapshot_id = snapshot.id;
+
+    for item in items {
+        let json_item = serde_json::to_string(&item).unwrap();
+        sqlx::query("INSERT INTO item (snapshot_id, stash_id, data) VALUES (?, ?, ?)")
+            .bind(snapshot_id)
+            .bind(&stash_id)
+            .bind(json_item)
+            .execute(pool)
+            .await
+            .map_err(Error::Sql)?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn snapshot_set_value(con: State<'_, DbCon>, snapshot: Snapshot, value: i64) -> Result<()> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    sqlx::query("UPDATE snapshots SET value = ? WHERE id = ?")
+        .bind(value)
+        .bind(snapshot.id)
+        .execute(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -323,8 +368,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                     Sqlite::create_database(&db_path).await?;
                 }
                 let pool = SqlitePool::connect(&db_path).await?;
-                let m = Migrator::new(Path::new("./migrations")).await?;
-                m.run(&pool).await?;
+                sqlx::migrate!().run(&pool).await?;
                 app.manage(DbCon {
                     db: Mutex::new(Some(pool)),
                 });
@@ -340,7 +384,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             get_profiles,
             new_snapshot,
             fetch_prices,
-            check_price
+            check_price,
+            add_items_to_snapshot,
+            snapshot_set_value
         ])
         .build()
 }

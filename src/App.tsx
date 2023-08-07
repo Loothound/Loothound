@@ -3,18 +3,14 @@ import ItemTable from './components/ItemTable';
 import { SampleStats } from './components/SampleStats';
 import TopBar from './components/TopBar';
 import { useState } from 'react';
+import { Item } from './types/types';
 
 function App() {
-	const [items, setItems] = useState([]);
+	const [items, setItems] = useState<Item[]>([]);
 	const [total, setTotal] = useState(0);
 	return (
 		<>
-			<TopBar
-				setItems={(i) => {
-					console.log(i);
-					setItems(i);
-				}}
-			/>
+			<TopBar setItems={setItems} />
 			<Flex justify={'center'} pt="5px" w="100%">
 				<SampleStats total={total} />
 			</Flex>

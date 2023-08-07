@@ -7,6 +7,7 @@ import { sortBy } from 'lodash';
 
 type Props = {
 	items: Item[];
+	setTotal: React.Dispatch<React.SetStateAction<number>>;
 };
 
 interface ItemWithPrice {
@@ -60,7 +61,7 @@ const ItemTable = ({ items, setTotal }: Props) => {
 		}
 		setRecords(r);
 		const divPrice = itemsWithPrice.find((x) => x.item.typeLine === 'Divine Orb')?.price;
-		setTotal((total / divPrice).toFixed(2));
+		setTotal(total / (divPrice || 1));
 	}, [itemsWithPrice]);
 
 	useEffect(() => {
