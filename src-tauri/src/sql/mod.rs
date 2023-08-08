@@ -3,14 +3,8 @@ mod model;
 use model::*;
 use serde::Serialize;
 use sqlx::migrate::MigrateDatabase;
-use sqlx::{
-    migrate::Migrator,
-    sqlite::{Sqlite, SqlitePool},
-};
-use std::{
-    fs::create_dir_all,
-    path::{Path, PathBuf},
-};
+use sqlx::sqlite::{Sqlite, SqlitePool};
+use std::{fs::create_dir_all, path::PathBuf};
 use tauri::{
     plugin::{Builder, TauriPlugin},
     AppHandle, Manager, Runtime, State,
@@ -355,6 +349,113 @@ async fn check_price(con: State<'_, DbCon>, name: String) -> Result<f64> {
     Ok(price.price)
 }
 
+#[tauri::command]
+async fn list_snapshots(con: State<'_, DbCon>, profile_id: i64) -> Result<Vec<Snapshot>> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    sqlx::query_as::<_, Snapshot>("SELECT * FROM snapshots WHERE profile_id = ?")
+        .bind(profile_id)
+        .fetch_all(pool)
+        .await
+        .map_err(Error::Sql)
+}
+
+#[tauri::command]
+async fn delete_snapshot(con: State<'_, DbCon>, snapshot_id: i64) -> Result<()> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    sqlx::query("DELETE FROM item WHERE snapshot_id = ?")
+        .bind(snapshot_id)
+        .execute(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    sqlx::query("DELETE FROM snapshots WHERE id = ?")
+        .bind(snapshot_id)
+        .execute(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn delete_profile(con: State<'_, DbCon>, profile_id: i64) -> Result<()> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    let snapshots = sqlx::query_as::<_, Snapshot>("SELECT * FROM snapshots WHERE profile_id = ?")
+        .bind(profile_id)
+        .fetch_all(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    for snapshot in snapshots {
+        sqlx::query("DELETE FROM item WHERE snapshot_id = ?")
+            .bind(snapshot.id)
+            .execute(pool)
+            .await
+            .map_err(Error::Sql)?;
+
+        sqlx::query("DELETE FROM snapshots WHERE id = ?")
+            .bind(snapshot.id)
+            .execute(pool)
+            .await
+            .map_err(Error::Sql)?;
+    }
+
+    sqlx::query("DELETE FROM profiles WHERE id = ?")
+        .bind(profile_id)
+        .execute(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn update_profile(
+    con: State<'_, DbCon>,
+    profile: Profile,
+    stash_tabs: Vec<String>,
+) -> Result<ProfileWithStashes> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    let new_profile = sqlx::query_as::<_, Profile>(
+        "UPDATE profiles SET name = ?, league_id = ?, pricing_league = ? WHERE id = ?",
+    )
+    .bind(profile.name)
+    .bind(profile.league_id)
+    .bind(profile.pricing_league)
+    .bind(profile.id)
+    .fetch_one(pool)
+    .await
+    .map_err(Error::Sql)?;
+
+    sqlx::query("DELETE FROM profile_stash_assoc WHERE profile_id = ?")
+        .bind(profile.id)
+        .execute(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    for stash_id in &stash_tabs {
+        sqlx::query("INSERT INTO profile_stash_assoc (profile_id, stash_id) VALUES (?, ?)")
+            .bind(profile.id)
+            .bind(stash_id)
+            .execute(pool)
+            .await
+            .map_err(Error::Sql)?;
+    }
+
+    Ok(ProfileWithStashes {
+        profile: new_profile,
+        stashes: stash_tabs,
+    })
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("sql")
         .setup(|app| {
@@ -386,7 +487,11 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             fetch_prices,
             check_price,
             add_items_to_snapshot,
-            snapshot_set_value
+            snapshot_set_value,
+            list_snapshots,
+            delete_snapshot,
+            delete_profile,
+            update_profile
         ])
         .build()
 }
