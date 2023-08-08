@@ -9,7 +9,7 @@ pub struct Stash {
     pub r#type: String,
 }
 
-#[derive(FromRow, Debug, PartialEq, Eq, Clone, serde::Serialize, TS)]
+#[derive(FromRow, Debug, PartialEq, Eq, Clone, serde::Serialize, serde::Deserialize, TS)]
 #[ts(export, export_to = "../src/bindings/")]
 pub struct Profile {
     pub id: i64,
