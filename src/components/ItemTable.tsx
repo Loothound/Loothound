@@ -27,6 +27,7 @@ const ItemTable = ({ items, setTotal }: Props) => {
 			type: string;
 			amount: number;
 			value: number;
+			icon: string;
 		}[]
 	>([]);
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
@@ -63,6 +64,7 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				value: Math.round(
 					(item.typeLine === 'Chaos Orb' ? 1 : price) * (item.stackSize ? item.stackSize : 1)
 				),
+				icon: item.icon,
 			});
 			total += Math.round(price * (item.stackSize ? item.stackSize : 1));
 		}
@@ -88,6 +90,12 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				records={records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
 				minHeight={200}
 				columns={[
+					{
+						accessor: 'icon',
+						// Icon image thingy from PoE API seems to always be 47px², scaling it down a bit for the UI
+						render: ({ icon }) => <img src={icon} height="40px"></img>,
+						width: '60px',
+					},
 					{ accessor: 'name', sortable: true },
 					{ accessor: 'type' },
 					{ accessor: 'amount', sortable: true },
