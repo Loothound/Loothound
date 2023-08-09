@@ -1,5 +1,6 @@
 import { Box, createStyles } from '@mantine/core';
 import { invoke } from '@tauri-apps/api';
+import { randomBytes } from 'crypto';
 import { sortBy } from 'lodash';
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
@@ -15,7 +16,7 @@ interface ItemWithPrice {
 	price: number;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 15;
 
 const ItemTable = ({ items, setTotal }: Props) => {
 	const { classes } = useStyles();
@@ -65,10 +66,10 @@ const ItemTable = ({ items, setTotal }: Props) => {
 			});
 			total += Math.round(price * (item.stackSize ? item.stackSize : 1));
 		}
-		setRecords(r.slice(page - 1 * PAGE_SIZE, page * PAGE_SIZE));
+		setRecords(r);
 		const divPrice = itemsWithPrice.find((x) => x.item.typeLine === 'Divine Orb')?.price;
 		setTotal(total / (divPrice || 1));
-	}, [itemsWithPrice, page]);
+	}, [itemsWithPrice]);
 
 	useEffect(() => {
 		const data = sortBy(records, sortStatus.columnAccessor);
@@ -84,7 +85,7 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				withColumnBorders
 				striped
 				highlightOnHover
-				records={records}
+				records={records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
 				minHeight={200}
 				columns={[
 					{ accessor: 'name', sortable: true },

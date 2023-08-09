@@ -3,7 +3,6 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useGetProfiles, useGetSingleStash } from '../services/services';
-import { Item } from '../types/types';
 import ProfileModal from './ProfileModal';
 import { getProfiles } from '../api/db';
 import api, { fetch_stashes } from '../api/client';
@@ -65,7 +64,7 @@ const TopBar = ({ setItems }: Props) => {
 								});
 
 								const s = await fetch_stashes(
-									profiles.find((x) => x.profile.id.toString() === selectedProfile)
+									profilesData.find((x) => x.profile.id.toString() === selectedProfile)
 										?.stashes as string[]
 								);
 
