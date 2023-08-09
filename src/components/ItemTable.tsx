@@ -15,6 +15,8 @@ interface ItemWithPrice {
 	price: number;
 }
 
+const PAGE_SIZE = 20;
+
 const ItemTable = ({ items, setTotal }: Props) => {
 	const { classes } = useStyles();
 	const [itemsWithPrice, setItemsWithPrice] = useState<ItemWithPrice[]>([]);
@@ -30,6 +32,7 @@ const ItemTable = ({ items, setTotal }: Props) => {
 		columnAccessor: 'name',
 		direction: 'asc',
 	});
+	const [page, setPage] = useState(1);
 
 	useEffect(() => {
 		(async () => {
@@ -38,6 +41,9 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				const itemWithPrice: ItemWithPrice = { item: item, price: 0 };
 				const name = item.name.length > 0 ? item.name : item.typeLine;
 				itemWithPrice.price = await invoke('plugin:sql|check_price', { name: name });
+				if (name === 'Chaos Orb') {
+					itemWithPrice.price = 1;
+				}
 				i.push(itemWithPrice);
 			}
 			setItemsWithPrice(i);
@@ -59,10 +65,10 @@ const ItemTable = ({ items, setTotal }: Props) => {
 			});
 			total += Math.round(price * (item.stackSize ? item.stackSize : 1));
 		}
-		setRecords(r);
+		setRecords(r.slice(page - 1 * PAGE_SIZE, page * PAGE_SIZE));
 		const divPrice = itemsWithPrice.find((x) => x.item.typeLine === 'Divine Orb')?.price;
 		setTotal(total / (divPrice || 1));
-	}, [itemsWithPrice]);
+	}, [itemsWithPrice, page]);
 
 	useEffect(() => {
 		const data = sortBy(records, sortStatus.columnAccessor);
@@ -88,6 +94,10 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				]}
 				sortStatus={sortStatus}
 				onSortStatusChange={setSortStatus}
+				page={page}
+				onPageChange={setPage}
+				recordsPerPage={PAGE_SIZE}
+				totalRecords={itemsWithPrice.length}
 			/>
 		</Box>
 	);
