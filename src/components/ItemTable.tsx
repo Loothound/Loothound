@@ -1,5 +1,6 @@
 import { Box, createStyles } from '@mantine/core';
 import { invoke } from '@tauri-apps/api';
+import { randomBytes } from 'crypto';
 import { sortBy } from 'lodash';
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
@@ -15,6 +16,8 @@ interface ItemWithPrice {
 	price: number;
 }
 
+const PAGE_SIZE = 15;
+
 const ItemTable = ({ items, setTotal }: Props) => {
 	const { classes } = useStyles();
 	const [itemsWithPrice, setItemsWithPrice] = useState<ItemWithPrice[]>([]);
@@ -24,12 +27,14 @@ const ItemTable = ({ items, setTotal }: Props) => {
 			type: string;
 			amount: number;
 			value: number;
+			icon: string;
 		}[]
 	>([]);
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
 		columnAccessor: 'name',
 		direction: 'asc',
 	});
+	const [page, setPage] = useState(1);
 
 	useEffect(() => {
 		(async () => {
@@ -38,6 +43,9 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				const itemWithPrice: ItemWithPrice = { item: item, price: 0 };
 				const name = item.name.length > 0 ? item.name : item.typeLine;
 				itemWithPrice.price = await invoke('plugin:sql|check_price', { name: name });
+				if (name === 'Chaos Orb') {
+					itemWithPrice.price = 1;
+				}
 				i.push(itemWithPrice);
 			}
 			setItemsWithPrice(i);
@@ -56,6 +64,7 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				value: Math.round(
 					(item.typeLine === 'Chaos Orb' ? 1 : price) * (item.stackSize ? item.stackSize : 1)
 				),
+				icon: item.icon,
 			});
 			total += Math.round(price * (item.stackSize ? item.stackSize : 1));
 		}
@@ -78,9 +87,15 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				withColumnBorders
 				striped
 				highlightOnHover
-				records={records}
+				records={records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
 				minHeight={200}
 				columns={[
+					{
+						accessor: 'icon',
+						// Icon image thingy from PoE API seems to always be 47px², scaling it down a bit for the UI
+						render: ({ icon }) => <img src={icon} height="40px"></img>,
+						width: '60px',
+					},
 					{ accessor: 'name', sortable: true },
 					{ accessor: 'type' },
 					{ accessor: 'amount', sortable: true },
@@ -88,6 +103,10 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				]}
 				sortStatus={sortStatus}
 				onSortStatusChange={setSortStatus}
+				page={page}
+				onPageChange={setPage}
+				recordsPerPage={PAGE_SIZE}
+				totalRecords={itemsWithPrice.length}
 			/>
 		</Box>
 	);
