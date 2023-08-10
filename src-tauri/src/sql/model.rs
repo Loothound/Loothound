@@ -42,7 +42,7 @@ pub struct Snapshot {
     pub pricing_revision: i64,
 }
 
-#[derive(FromRow, Debug, PartialEq, Eq)]
+#[derive(FromRow, Debug, PartialEq)]
 pub struct ItemRow {
     pub id: i64,
     pub snapshot_id: i64,
@@ -50,7 +50,7 @@ pub struct ItemRow {
     pub data: sqlx::types::Json<Item>,
 }
 
-#[derive(Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, TS)]
+#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, TS)]
 #[ts(export, export_to = "../src/bindings/")]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
@@ -71,6 +71,18 @@ pub struct Item {
     pub base_type: String,
     pub identified: bool,
     pub item_level: Option<i64>,
+    pub properties: Option<ItemProperty>,
+}
+
+#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, TS)]
+pub struct ItemProperty {
+    pub name: String,
+    #[ts(type = "any[]")]
+    pub values: serde_json::Value,
+    pub display_mode: i64,
+    pub progress: Option<f64>,
+    pub r#type: Option<i64>,
+    pub suffix: Option<String>,
 }
 
 #[derive(FromRow, Debug, PartialEq, serde::Serialize, serde::Deserialize, TS)]
