@@ -1781,7 +1781,6 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-oauth",
- "tauri-plugin-sql",
  "thiserror",
  "tokio",
  "ts-rs",
@@ -3187,7 +3186,6 @@ dependencies = [
  "sqlx-rt",
  "stringprep",
  "thiserror",
- "time 0.3.22",
  "tokio-stream",
  "url",
  "webpki-roots",
@@ -3521,22 +3519,6 @@ dependencies = [
  "serde",
  "tauri",
  "url",
-]
-
-[[package]]
-name = "tauri-plugin-sql"
-version = "0.0.0"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=v1#a305ad3ddbdf4b7c009394ac3dc4794cfc222f0f"
-dependencies = [
- "futures-core",
- "log",
- "serde",
- "serde_json",
- "sqlx",
- "tauri",
- "thiserror",
- "time 0.3.22",
- "tokio",
 ]
 
 [[package]]

@@ -37,12 +37,12 @@ pub struct ProfileStashAssoc {
 pub struct Snapshot {
     pub id: i64,
     pub profile_id: i64,
-    #[ts(type = "number")]
+    #[ts(type = "string")]
     pub timestamp: sqlx::types::chrono::NaiveDateTime,
     pub pricing_revision: i64,
 }
 
-#[derive(FromRow, Debug, PartialEq, Eq)]
+#[derive(FromRow, Debug, PartialEq)]
 pub struct ItemRow {
     pub id: i64,
     pub snapshot_id: i64,
@@ -50,7 +50,7 @@ pub struct ItemRow {
     pub data: sqlx::types::Json<Item>,
 }
 
-#[derive(Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, TS)]
+#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, TS)]
 #[ts(export, export_to = "../src/bindings/")]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
@@ -71,6 +71,7 @@ pub struct Item {
     pub base_type: String,
     pub identified: bool,
     pub item_level: Option<i64>,
+    pub frame_type: i64,
 }
 
 #[derive(FromRow, Debug, PartialEq, serde::Serialize, serde::Deserialize, TS)]
@@ -81,4 +82,6 @@ pub struct Price {
     pub price: f64,
     pub revision: i64,
     pub fully_linked: bool,
+    #[ts(type = "string")]
+    pub timestamp: chrono::NaiveDateTime,
 }

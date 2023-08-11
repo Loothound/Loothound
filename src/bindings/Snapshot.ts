@@ -3,6 +3,6 @@
 export interface Snapshot {
 	id: bigint;
 	profile_id: bigint;
-	timestamp: number;
+	timestamp: string;
 	pricing_revision: bigint;
 }
