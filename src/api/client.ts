@@ -34,15 +34,37 @@ client.interceptors.response.use(
 const limiters: Record<string, RateLimiter[]> = {};
 
 export async function fetch_stash(id: string): Promise<ExtendedStashTab> {
+	return (await fetch_stashes([id]))[0];
+}
+
+export async function fetch_stashes(ids: string[]): Promise<ExtendedStashTab[]> {
 	const policy = 'stash-request-limit';
+
+	const tabs: ExtendedStashTab[] = [];
+
+	async function fetch(id: string): Promise<ExtendedStashTab> {
+		for (const l of limiters[policy]) {
+			console.log('awaiting limiters');
+			await l.removeTokens(1);
+			console.log('limiters free');
+			console.log('');
+		}
+		const {
+			data: { stash },
+		} = await client.get<{
+			stash: ExtendedStashTab;
+		}>(`stash/Crucible/${id}`);
+		return stash;
+	}
 
 	if (!(policy in limiters)) {
 		// first stash tab to be fetched so we have to send one request and extract some info on the rate limits
-		const first = id;
+		const first = ids.pop();
 		const {
 			headers,
 			data: { stash },
 		} = await client.get<{ stash: ExtendedStashTab }>(`stash/Crucible/${first}`);
+		tabs.push(stash);
 		const rateLimitString: string = headers['x-rate-limit-account'];
 		const limits = rateLimitString.split(',').map((x) => {
 			const y = x.split(':');
@@ -55,18 +77,14 @@ export async function fetch_stash(id: string): Promise<ExtendedStashTab> {
 			rateLimiters.push(rl);
 		}
 		limiters[policy] = rateLimiters;
-		return stash;
-	} else {
-		for (const l of limiters[policy]) {
-			await l.removeTokens(1);
-		}
-		const {
-			data: { stash },
-		} = await client.get<{
-			stash: ExtendedStashTab;
-		}>(`stash/Crucible/${id}`);
-		return stash;
 	}
+
+	for (const id of ids) {
+		const data = await fetch(id);
+		tabs.push(data);
+	}
+
+	return tabs;
 }
 
 export default client;
