@@ -493,18 +493,13 @@ async fn snapshot_fetch_items(con: State<'_, DbCon>, snapshot: Snapshot) -> Resu
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
-    let item_rows = sqlx::query_as::<_, ItemRow>("SELECT * FROM items WHERE snapshot_id = ?")
+    let row_items = sqlx::query_as::<_, ItemRow>("SELECT * FROM items WHERE snapshot_id = ?")
         .bind(snapshot.id)
         .fetch_all(pool)
         .await
         .map_err(Error::Sql)?;
 
-    let mut items = vec![];
-    for row in item_rows {
-        items.push(*row.data.as_ref())
-    }
-
-    Ok(items)
+    Ok(row_items.iter().map(|x| x.data.clone().0).collect())
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
