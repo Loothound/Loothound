@@ -59,3 +59,7 @@ export async function updateProfile(
 ): Promise<ProfileWithStashes> {
 	return await invoke('plugin:sql|update_profile', { profile, stashTabs });
 }
+
+export async function oopsie() {
+	return await invoke('plugin:sql|oopsie');
+}

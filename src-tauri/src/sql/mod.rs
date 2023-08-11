@@ -502,6 +502,28 @@ async fn snapshot_fetch_items(con: State<'_, DbCon>, snapshot: Snapshot) -> Resu
     Ok(row_items.iter().map(|x| x.data.clone().0).collect())
 }
 
+#[tauri::command]
+async fn oopsie<R: Runtime>(con: State<'_, DbCon>, app: AppHandle<R>) -> Result<()> {
+    let mut mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+    pool.close().await;
+
+    let mut app_path = app_path(&app);
+    create_dir_all(&app_path).expect("Problem creating App directory!");
+    app_path.push("loothound.db");
+    let db_path = format!("sqlite:{}", app_path.to_str().expect("oopsie"));
+
+    std::fs::remove_file(&db_path).unwrap();
+    Sqlite::create_database(&db_path).await?;
+
+    let new_pool = SqlitePool::connect(&db_path).await?;
+    sqlx::migrate!().run(&new_pool).await?;
+
+    *mutex = Some(new_pool);
+
+    Ok(())
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("sql")
         .setup(|app| {
@@ -539,7 +561,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             delete_profile,
             update_profile,
             has_recent_prices,
-            snapshot_fetch_items
+            snapshot_fetch_items,
+            oopsie
         ])
         .build()
 }
