@@ -67,6 +67,7 @@ export interface StashTab {
 		folder?: boolean;
 		colour?: string;
 	};
+	children?: StashTab[];
 }
 
 export interface ExtendedStashTab {

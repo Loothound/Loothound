@@ -4,10 +4,8 @@ import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useGetProfiles, useGetSingleStash } from '../services/services';
 import ProfileModal from './ProfileModal';
-import { getProfiles } from '../api/db';
-import api, { fetch_stashes } from '../api/client';
-import { ExtendedStashTab, Item } from '../types/types';
-import { ProfileWithStashes } from '../api/db';
+import { fetch_stashes } from '../api/client';
+import { Item } from '../types/types';
 import { invoke } from '@tauri-apps/api';
 
 type Props = {
@@ -68,17 +66,40 @@ const TopBar = ({ setItems }: Props) => {
 										?.stashes as string[]
 								);
 
+								const extraItems = [];
+
 								for (const stashtab of s) {
-									console.log(stashtab.items);
-									await invoke('plugin:sql|add_items_to_snapshot', {
-										snapshot: snapshot,
-										items: stashtab.items,
-										stashId: stashtab.id,
-									});
+									if (stashtab.type == 'MapStash') {
+										for (const child of stashtab.children) {
+											const item = {
+												verified: false,
+												w: 1,
+												h: 1,
+												icon: child.metadata.map.image,
+												name: child.metadata.map.name,
+												typeLine: child.metadata.map.name,
+												baseType: child.metadata.map.name,
+												identified: true,
+												frameType: 0,
+											};
+											await invoke('plugin:sql|add_items_to_snapshot', {
+												snapshot: snapshot,
+												items: [item],
+												stashId: stashtab.id,
+											});
+											extraItems.push(item);
+										}
+									} else {
+										await invoke('plugin:sql|add_items_to_snapshot', {
+											snapshot: snapshot,
+											items: stashtab.items,
+											stashId: stashtab.id,
+										});
+									}
 								}
 
 								const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
-								setItems(i);
+								setItems(i.concat(extraItems));
 							}}
 							disabled={isStashDataFetching}
 						>

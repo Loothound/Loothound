@@ -4,7 +4,7 @@ import { fetchStashes, getSingleStash } from '../api/api';
 import { getProfiles } from '../api/db';
 import { CreateProfilePayload } from '../components/ProfileModal';
 
-export const useFetchStashes = () => useQuery(['stashes'], fetchStashes);
+export const useFetchStashes = () => useQuery(['stashes'], fetchStashes, { staleTime: 120000 });
 
 export const useAddProfile = () => {
 	const queryClient = useQueryClient();
