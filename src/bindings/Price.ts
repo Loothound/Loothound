@@ -6,4 +6,5 @@ export interface Price {
 	price: number;
 	revision: bigint;
 	fully_linked: boolean;
+	timestamp: string;
 }

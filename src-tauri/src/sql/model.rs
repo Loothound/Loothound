@@ -37,7 +37,7 @@ pub struct ProfileStashAssoc {
 pub struct Snapshot {
     pub id: i64,
     pub profile_id: i64,
-    #[ts(type = "number")]
+    #[ts(type = "string")]
     pub timestamp: sqlx::types::chrono::NaiveDateTime,
     pub pricing_revision: i64,
 }
@@ -71,18 +71,7 @@ pub struct Item {
     pub base_type: String,
     pub identified: bool,
     pub item_level: Option<i64>,
-    pub properties: Option<ItemProperty>,
-}
-
-#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, TS)]
-pub struct ItemProperty {
-    pub name: String,
-    #[ts(type = "any[]")]
-    pub values: serde_json::Value,
-    pub display_mode: i64,
-    pub progress: Option<f64>,
-    pub r#type: Option<i64>,
-    pub suffix: Option<String>,
+    pub frame_type: i64,
 }
 
 #[derive(FromRow, Debug, PartialEq, serde::Serialize, serde::Deserialize, TS)]
@@ -93,4 +82,6 @@ pub struct Price {
     pub price: f64,
     pub revision: i64,
     pub fully_linked: bool,
+    #[ts(type = "string")]
+    pub timestamp: chrono::NaiveDateTime,
 }

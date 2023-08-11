@@ -1,5 +1,6 @@
 mod model;
 
+use chrono::Duration;
 use model::*;
 use serde::Serialize;
 use sqlx::migrate::MigrateDatabase;
@@ -281,15 +282,20 @@ async fn fetch_prices(con: State<'_, DbCon>) -> Result<i64> {
         );
         let resp: NinjaCurrencyResponse = reqwest::get(url).await?.json().await?;
 
+        let timestamp = chrono::Local::now().naive_utc();
+
         for line in resp.lines.iter() {
             if let Some(receive) = &line.receive {
-                sqlx::query("INSERT INTO price (name, price, revision) VALUES (?, ?, ?)")
-                    .bind(&line.currency_type_name)
-                    .bind(receive.value)
-                    .bind(next_rev)
-                    .execute(pool)
-                    .await
-                    .map_err(Error::Sql)?;
+                sqlx::query(
+                    "INSERT INTO price (name, price, revision, timestamp) VALUES (?, ?, ?, ?)",
+                )
+                .bind(&line.currency_type_name)
+                .bind(receive.value)
+                .bind(next_rev)
+                .bind(timestamp)
+                .execute(pool)
+                .await
+                .map_err(Error::Sql)?;
             }
         }
     }
@@ -344,6 +350,7 @@ async fn check_price(con: State<'_, DbCon>, name: String) -> Result<f64> {
         price: 0.0,
         revision: 0,
         fully_linked: false,
+        timestamp: chrono::Local::now().naive_utc(),
     });
 
     Ok(price.price)
@@ -456,6 +463,31 @@ async fn update_profile(
     })
 }
 
+#[tauri::command]
+async fn has_recent_prices(con: State<'_, DbCon>) -> Result<bool> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    let count = sqlx::query_as::<_, (i64,)>("SELECT COUNT(*) as count_price FROM price")
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    if count.0 == 0 {
+        return Ok(false);
+    }
+
+    let res = sqlx::query_as::<_, Price>("SELECT * FROM price ORDER BY timestamp DESC LIMIT 1")
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    return Ok(chrono::Utc::now()
+        .naive_utc()
+        .signed_duration_since(res.timestamp)
+        <= Duration::hours(1));
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("sql")
         .setup(|app| {
@@ -491,7 +523,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             list_snapshots,
             delete_snapshot,
             delete_profile,
-            update_profile
+            update_profile,
+            has_recent_prices
         ])
         .build()
 }
