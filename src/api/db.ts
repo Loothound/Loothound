@@ -49,6 +49,10 @@ export async function deleteSnapshot(snapshotId: number) {
 	return await invoke('plugin:sql|delete_snapshot', { snapshotId });
 }
 
+export async function fetchSnapshotItems(snapshot: Snapshot) {
+	return await invoke('plugin:sql|snapshot_fetch_items', { snapshot });
+}
+
 export async function updateProfile(
 	profile: Profile,
 	stashTabs: string[]

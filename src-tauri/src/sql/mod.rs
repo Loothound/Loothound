@@ -488,6 +488,25 @@ async fn has_recent_prices(con: State<'_, DbCon>) -> Result<bool> {
         <= Duration::hours(1));
 }
 
+#[tauri::command]
+async fn snapshot_fetch_items(con: State<'_, DbCon>, snapshot: Snapshot) -> Result<Vec<Item>> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    let item_rows = sqlx::query_as::<_, ItemRow>("SELECT * FROM items WHERE snapshot_id = ?")
+        .bind(snapshot.id)
+        .fetch_all(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    let mut items = vec![];
+    for row in item_rows {
+        items.push(*row.data.as_ref())
+    }
+
+    Ok(items)
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("sql")
         .setup(|app| {
@@ -524,7 +543,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             delete_snapshot,
             delete_profile,
             update_profile,
-            has_recent_prices
+            has_recent_prices,
+            snapshot_fetch_items
         ])
         .build()
 }

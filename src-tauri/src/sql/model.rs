@@ -50,7 +50,7 @@ pub struct ItemRow {
     pub data: sqlx::types::Json<Item>,
 }
 
-#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, TS)]
+#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, Copy, TS)]
 #[ts(export, export_to = "../src/bindings/")]
 #[serde(rename_all = "camelCase")]
 pub struct Item {
