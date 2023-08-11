@@ -9,7 +9,7 @@ fn main() {
 
     println!("cargo:rerun-if-changed=src/sql/model.rs");
 
-    let exports: Vec<_> = fs::read_dir("../src/bindings")
+    let mut exports: Vec<String> = fs::read_dir("../src/bindings")
         .unwrap()
         .filter_map(Result::ok)
         .filter_map(|p| {
@@ -21,7 +21,9 @@ fn main() {
         })
         .filter(|f| f != "index")
         .map(|f| format!("export * from \"./{}\"", f))
-        .collect();
+        .collect::<Vec<String>>();
+
+    exports.sort();
 
     let mut file = File::create("../src/bindings/index.ts").unwrap();
     file.write_all(
