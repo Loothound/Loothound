@@ -1,12 +1,12 @@
-import { ActionIcon, Button, Flex, Paper, Select, Text, createStyles } from '@mantine/core';
+import { ActionIcon, Button, Flex, Paper, Select, Title, createStyles } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useState } from 'react';
-import { useGetProfiles, useGetSingleStash } from '../services/services';
-import ProfileModal from './ProfileModal';
-import { fetch_stashes } from '../api/client';
-import { Item } from '../types/types';
 import { invoke } from '@tauri-apps/api';
+import { useState } from 'react';
+import { fetch_stashes } from '../api/client';
+import { useGetProfiles, useGetSingleStash, useGetSnapshots } from '../services/services';
+import { Item } from '../types/types';
+import ProfileModal from './ProfileModal';
 
 type Props = {
 	setItems: React.Dispatch<React.SetStateAction<Item[]>>;
@@ -35,15 +35,26 @@ const TopBar = ({ setItems }: Props) => {
 		}
 	);
 
+	const { data: snapshotData, isFetching: isSnapshotDataFetching } = useGetSnapshots(
+		Number(selectedProfile),
+		{
+			enabled: !!selectedProfile,
+		}
+	);
+
+	console.log(selectedProfile, snapshotData);
+
 	return (
 		<>
 			<Paper className={classes.root}>
 				<Flex align={'center'} justify={'space-between'}>
-					<Flex align={'center'} gap="xs">
-						<Text fz="xl" fw="bold">
+					<Flex align={'center'} gap="xs" className={classes.logoContainer}>
+						<img src="/logo.svg" height={44} width={44} />
+						<Title order={1} size="h2" color="white">
 							LootHound
-						</Text>
+						</Title>
 					</Flex>
+					<div className={classes.logoDecoration} />
 					<Flex align={'center'} justify={'center'} gap="12px">
 						<Select
 							value={selectedProfile}
@@ -101,7 +112,7 @@ const TopBar = ({ setItems }: Props) => {
 								const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
 								setItems(i.concat(extraItems));
 							}}
-							disabled={isStashDataFetching}
+							disabled={isStashDataFetching || isSnapshotDataFetching}
 						>
 							Take Snapshot
 						</Button>
@@ -124,7 +135,22 @@ const TopBar = ({ setItems }: Props) => {
 
 const useStyles = createStyles((theme) => ({
 	root: {
-		padding: `.4rem calc(${theme.spacing.xl} * 1.5)`,
+		padding: `0 calc(${theme.spacing.md} * 1.5)`,
+		position: 'relative',
+		background: 'black',
+		marginBottom: '12px',
+	},
+	logoContainer: {
+		padding: '12px',
+		zIndex: 200,
+	},
+	logoDecoration: {
+		position: 'absolute',
+		background: theme.fn.linearGradient(45, theme.colors.red[9], theme.colors.red[7]),
+		transform: 'skew(-45deg) translateX(-30%)',
+		borderRadius: '4px',
+		width: '30%',
+		height: '100%',
 	},
 }));
 

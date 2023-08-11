@@ -57,7 +57,7 @@ export function SampleStats({ total }: Props) {
 		return (
 			<Paper withBorder p="md" radius="md" key={stat.title}>
 				<Group position="apart">
-					<Text size="xs" color="dimmed" className={classes.title}>
+					<Text size="xs" className={classes.title}>
 						{stat.title}
 					</Text>
 					<Icon className={classes.icon} size="24px" stroke={1.5} />
