@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/tauri';
 import { fetchStashes, getSingleStash } from '../api/api';
+import { fetch_stash } from '../api/client';
 import { getProfiles } from '../api/db';
 import { CreateProfilePayload } from '../components/ProfileModal';
 
@@ -18,6 +19,6 @@ export const useAddProfile = () => {
 };
 
 export const useGetSingleStash = (stashId: string, options: Record<string, any>) =>
-	useQuery(['stash'], () => getSingleStash(stashId), options);
+	useQuery(['stash'], () => fetch_stash(stashId), options);
 
 export const useGetProfiles = () => useQuery(['profiles'], getProfiles);
