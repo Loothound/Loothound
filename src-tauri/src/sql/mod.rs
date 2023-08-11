@@ -493,7 +493,7 @@ async fn snapshot_fetch_items(con: State<'_, DbCon>, snapshot: Snapshot) -> Resu
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
-    let row_items = sqlx::query_as::<_, ItemRow>("SELECT * FROM items WHERE snapshot_id = ?")
+    let row_items = sqlx::query_as::<_, ItemRow>("SELECT * FROM item WHERE snapshot_id = ?")
         .bind(snapshot.id)
         .fetch_all(pool)
         .await
