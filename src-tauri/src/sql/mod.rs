@@ -275,14 +275,14 @@ async fn fetch_prices(con: State<'_, DbCon>) -> Result<i64> {
         .unwrap_or((0,));
     let next_rev = current_revision.0 + 1;
 
+    let timestamp = chrono::Local::now().naive_utc();
+
     for currency_type in CURRENCY_CATEGORIES {
         let url = format!(
             "https://poe.ninja/api/data/currencyoverview?league={}&type={}",
             LEAGUE, currency_type
         );
         let resp: NinjaCurrencyResponse = reqwest::get(url).await?.json().await?;
-
-        let timestamp = chrono::Local::now().naive_utc();
 
         for line in resp.lines.iter() {
             if let Some(receive) = &line.receive {
@@ -310,12 +310,13 @@ async fn fetch_prices(con: State<'_, DbCon>) -> Result<i64> {
         for line in resp.lines.iter() {
             let links = line.links.map(|n| if n == 6 { 1 } else { 0 }).unwrap_or(0);
             sqlx::query(
-                "INSERT INTO price (name, price, revision, fully_linked) VALUES (?, ?, ?, ?)",
+                "INSERT INTO price (name, price, revision, fully_linked, timestamp) VALUES (?, ?, ?, ?, ?)",
             )
             .bind(&line.name)
             .bind(line.chaos_value)
             .bind(next_rev)
             .bind(links)
+            .bind(timestamp)
             .execute(pool)
             .await
             .map_err(Error::Sql)?;
