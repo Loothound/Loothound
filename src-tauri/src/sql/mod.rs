@@ -433,7 +433,7 @@ async fn update_profile(
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
     let new_profile = sqlx::query_as::<_, Profile>(
-        "UPDATE profiles SET name = ?, league_id = ?, pricing_league = ? WHERE id = ?",
+        "UPDATE profiles SET name = ?, league_id = ?, pricing_league = ? WHERE id = ? RETURNING *",
     )
     .bind(profile.name)
     .bind(profile.league_id)
