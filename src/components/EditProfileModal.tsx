@@ -115,7 +115,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData }: Props) => {
 							<Button variant="outline" mt={16} onClick={onClose}>
 								Cancel
 							</Button>
-							<Button mt={16} type="submit">
+							<Button mt={16} type="submit" disabled={!form.isDirty()}>
 								Update
 							</Button>
 						</Flex>

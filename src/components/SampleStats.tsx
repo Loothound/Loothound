@@ -27,29 +27,6 @@ const icons = {
 	snapshot: IconClockHour3,
 };
 
-function getData(total: number): StatsGridData[] {
-	return [
-		{
-			title: 'Net Worth',
-			icon: 'netWorth',
-			value: total.toFixed(2) + ' c',
-			diff: 0,
-		},
-		{
-			title: 'Income',
-			icon: 'income',
-			value: '420',
-			diff: 0,
-		},
-		{
-			title: 'Snapshot Count',
-			icon: 'snapshot',
-			value: '1',
-			diff: 0,
-		},
-	];
-}
-
 export function SampleStats({ total, selectedProfileId }: Props) {
 	const { classes } = useStyles();
 
@@ -74,13 +51,19 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 			{
 				title: 'Net Worth',
 				icon: 'netWorth',
-				value: total.toFixed(2) + ' c',
+				value:
+					total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+					' div',
 				diff: Number(getDiff(snapshotData)),
 			},
 			{
 				title: 'Income',
 				icon: 'income',
-				value: '420',
+				value:
+					Number(420).toLocaleString(undefined, {
+						minimumFractionDigits: 2,
+						maximumFractionDigits: 2,
+					}) + '/h',
 				diff: 0,
 			},
 			{

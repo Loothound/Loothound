@@ -152,10 +152,7 @@ const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) =>
 							<IconTrash size="16px" />
 						</ActionIcon>
 						<Divider orientation="vertical" />
-						<Button
-							onClick={handleSnapshotButton}
-							disabled={!selectedProfileId || isSnapshotDataFetching || isSnapshotItemDataFetching}
-						>
+						<Button onClick={handleSnapshotButton} disabled={!selectedProfileId}>
 							Take Snapshot
 						</Button>
 						<Divider orientation="vertical" />
