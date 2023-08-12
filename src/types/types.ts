@@ -66,6 +66,10 @@ export interface StashTab {
 		public?: boolean;
 		folder?: boolean;
 		colour?: string;
+		map?: {
+			name: string;
+			image: string;
+		};
 	};
 	children?: StashTab[];
 }

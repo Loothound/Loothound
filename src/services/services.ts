@@ -1,7 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/tauri';
-import { fetchStashes, getSingleStash } from '../api/api';
-import { Snapshot, fetchSnapshotItems, getProfiles, listSnapshots } from '../api/db';
+import { fetchStashes } from '../api/api';
+import {
+	Profile,
+	ProfileWithStashes,
+	Snapshot,
+	fetchSnapshotItems,
+	getProfiles,
+	listSnapshots,
+	updateProfile,
+} from '../api/db';
 import { CreateProfilePayload } from '../components/ProfileModal';
 
 export const useFetchStashes = () => useQuery(['stashes'], fetchStashes, { staleTime: 120000 });
@@ -9,7 +17,7 @@ export const useFetchStashes = () => useQuery(['stashes'], fetchStashes, { stale
 export const useAddProfile = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation(
+	return useMutation<Profile, unknown, CreateProfilePayload>(
 		(values: CreateProfilePayload) => invoke('plugin:sql|create_profile', values),
 		{
 			onSuccess: () => queryClient.invalidateQueries(['profiles']),
@@ -17,8 +25,16 @@ export const useAddProfile = () => {
 	);
 };
 
-export const useGetSingleStash = (stashId: string, options: Record<string, any>) =>
-	useQuery(['stash'], () => fetch_stash(stashId), options);
+export const useEditProfile = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation(
+		(values: ProfileWithStashes) => updateProfile(values.profile, values.stashes),
+		{
+			onSuccess: () => queryClient.invalidateQueries(['profiles']),
+		}
+	);
+};
 
 export const useGetProfiles = () => useQuery(['profiles'], getProfiles);
 

@@ -1,6 +1,5 @@
-import { Box, createStyles } from '@mantine/core';
+import { Box, Flex, createStyles } from '@mantine/core';
 import { invoke } from '@tauri-apps/api';
-import { randomBytes } from 'crypto';
 import { sortBy } from 'lodash';
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
@@ -58,6 +57,7 @@ const ItemTable = ({ items, setTotal }: Props) => {
 		for (const i of itemsWithPrice) {
 			const { item, price } = i;
 			r.push({
+				gggId: item.id,
 				name: item.name.length > 0 ? item.name : item.typeLine,
 				type: item.baseType,
 				amount: item.stackSize ? item.stackSize : 1,
@@ -89,12 +89,16 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				highlightOnHover
 				records={records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
 				minHeight={200}
+				idAccessor="gggId"
 				columns={[
 					{
 						accessor: 'icon',
 						// Icon image thingy from PoE API seems to always be 47px², scaling it down a bit for the UI
-						render: ({ icon }) => <img src={icon} height="40px"></img>,
-						width: '60px',
+						render: ({ icon }) => (
+							<Flex justify={'center'}>
+								<img src={icon} height="32px" />
+							</Flex>
+						),
 					},
 					{ accessor: 'name', sortable: true },
 					{ accessor: 'type' },

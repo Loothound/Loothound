@@ -1,50 +1,45 @@
-import { ActionIcon, Button, Flex, Paper, Select, Title, createStyles } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
-import { invoke } from '@tauri-apps/api';
-import { useEffect, useState } from 'react';
-import { fetch_stashes } from '../api/client';
 import {
-	useGetProfiles,
-	useGetSingleStash,
-	useGetSnapshotItems,
-	useGetSnapshots,
-} from '../services/services';
-import { Item } from '../types/types';
-import ProfileModal from './ProfileModal';
+	ActionIcon,
+	Button,
+	Divider,
+	Flex,
+	Paper,
+	Select,
+	Title,
+	createStyles,
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { IconBell, IconPlus, IconSettings, IconTrash } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { invoke } from '@tauri-apps/api';
+import { useEffect } from 'react';
+import { fetch_stashes } from '../api/client';
 import { Snapshot } from '../bindings';
+import { useGetProfiles, useGetSnapshotItems, useGetSnapshots } from '../services/services';
+import { Item } from '../types/types';
+import EditProfileModal from './EditProfileModal';
+import ProfileModal from './ProfileModal';
 
 type Props = {
 	setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+	selectedProfileId: number | bigint | null;
+	setSelectedProfileId: React.Dispatch<React.SetStateAction<number | bigint | null>>;
 };
 
-const TopBar = ({ setItems }: Props) => {
+const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) => {
+	const queryClient = useQueryClient();
 	const { classes } = useStyles();
-	const [opened, { open, close }] = useDisclosure(false);
-	const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
-	const [shouldSearch, setShouldSearch] = useState(false);
+
+	const [isAddProfileModalOpen, { open: openAddProfileModal, close: closeAddProfileModal }] =
+		useDisclosure(false);
+	const [isEditProfileModalOpen, { open: openEditProfileModal, close: closeEditProfileModal }] =
+		useDisclosure(false);
 
 	const { data: profilesData = [], isLoading: isProfilesLoading } = useGetProfiles();
-
-	const selectedProfileStashes = profilesData.find(
-		(x) => x.profile.id.toString() === selectedProfile
-	)?.stashes[0];
-
-	const { data: stashData, isFetching: isStashDataFetching } = useGetSingleStash(
-		selectedProfileStashes || '',
-		{
-			enabled: shouldSearch && !!selectedProfileStashes,
-			onSuccess: () => {
-				setShouldSearch(false);
-				setItems(stashData?.items || []);
-			},
-		}
-	);
-
 	const { data: snapshotData, isFetching: isSnapshotDataFetching } = useGetSnapshots(
-		Number(selectedProfile),
+		Number(selectedProfileId),
 		{
-			enabled: !!selectedProfile,
+			enabled: !!selectedProfileId,
 		}
 	);
 
@@ -52,12 +47,64 @@ const TopBar = ({ setItems }: Props) => {
 
 	const { data: snapshotItemsData, isFetching: isSnapshotItemDataFetching } = useGetSnapshotItems(
 		latestSnapshot as Snapshot,
-		{ enabled: !!latestSnapshot }
+		{ enabled: !!latestSnapshot, onSuccess: (data: Item[]) => setItems(data) }
 	);
 
 	useEffect(() => {
-		setItems(snapshotItemsData as Item[]);
-	}, [selectedProfile]);
+		if (snapshotItemsData) {
+			setItems(snapshotItemsData as Item[]);
+		} else {
+			setItems([]);
+		}
+	}, [selectedProfileId, latestSnapshot]);
+
+	const handleSnapshotButton = async () => {
+		const snapshot = await invoke('plugin:sql|new_snapshot', {
+			profileId: selectedProfileId,
+		});
+
+		queryClient.invalidateQueries(['snapshots', selectedProfileId]);
+
+		const s = await fetch_stashes(
+			profilesData.find((x) => x.profile.id === selectedProfileId)?.stashes as string[]
+		);
+
+		const extraItems: Item[] = [];
+
+		for (const stashtab of s) {
+			if (stashtab.type == 'MapStash') {
+				for (const child of stashtab.children) {
+					if (!child.metadata.map) return;
+					const item: any = {
+						verified: false,
+						w: 1,
+						h: 1,
+						icon: child.metadata?.map?.image,
+						name: child.metadata?.map?.name,
+						typeLine: child.metadata?.map?.name,
+						baseType: child.metadata?.map?.name,
+						identified: true,
+						frameType: 0,
+					};
+					await invoke('plugin:sql|add_items_to_snapshot', {
+						snapshot: snapshot,
+						items: [item],
+						stashId: stashtab.id,
+					});
+					extraItems.push(item);
+				}
+			} else {
+				await invoke('plugin:sql|add_items_to_snapshot', {
+					snapshot: snapshot,
+					items: stashtab.items,
+					stashId: stashtab.id,
+				});
+			}
+		}
+
+		const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
+		setItems(i.concat(extraItems));
+	};
 
 	return (
 		<>
@@ -70,10 +117,22 @@ const TopBar = ({ setItems }: Props) => {
 						</Title>
 					</Flex>
 					<div className={classes.logoDecoration} />
-					<Flex align={'center'} justify={'center'} gap="12px">
+					<Flex align={'center'} justify={'center'} gap="4px">
+						{selectedProfileId ? (
+							<ActionIcon
+								onClick={openEditProfileModal}
+								size="lg"
+								variant="subtle"
+								aria-label="Show notifications"
+							>
+								<IconSettings size="16px" />
+							</ActionIcon>
+						) : (
+							<></>
+						)}
 						<Select
-							value={selectedProfile}
-							onChange={setSelectedProfile}
+							value={String(selectedProfileId)}
+							onChange={(value) => setSelectedProfileId(Number(value))}
 							placeholder={profilesData.length < 1 ? 'No profiles found' : 'Pick a profile'}
 							data={profilesData.map(({ profile }) => ({
 								label: profile.name,
@@ -81,66 +140,38 @@ const TopBar = ({ setItems }: Props) => {
 							}))}
 							disabled={profilesData.length < 1 || isProfilesLoading}
 						/>
+						<ActionIcon
+							onClick={openAddProfileModal}
+							size="lg"
+							variant="subtle"
+							aria-label="Show notifications"
+						>
+							<IconPlus size="16px" />
+						</ActionIcon>
+						<ActionIcon aria-label="Delete snapshots" variant="subtle" size="lg" color="red">
+							<IconTrash size="16px" />
+						</ActionIcon>
+						<Divider orientation="vertical" />
 						<Button
-							onClick={async () => {
-								const snapshot = await invoke('plugin:sql|new_snapshot', {
-									profileId: parseInt(selectedProfile as string),
-								});
-
-								const s = await fetch_stashes(
-									profilesData.find((x) => x.profile.id.toString() === selectedProfile)
-										?.stashes as string[]
-								);
-
-								const extraItems = [];
-
-								for (const stashtab of s) {
-									if (stashtab.type == 'MapStash') {
-										for (const child of stashtab.children) {
-											const item = {
-												verified: false,
-												w: 1,
-												h: 1,
-												icon: child.metadata.map.image,
-												name: child.metadata.map.name,
-												typeLine: child.metadata.map.name,
-												baseType: child.metadata.map.name,
-												identified: true,
-												frameType: 0,
-											};
-											await invoke('plugin:sql|add_items_to_snapshot', {
-												snapshot: snapshot,
-												items: [item],
-												stashId: stashtab.id,
-											});
-											extraItems.push(item);
-										}
-									} else {
-										await invoke('plugin:sql|add_items_to_snapshot', {
-											snapshot: snapshot,
-											items: stashtab.items,
-											stashId: stashtab.id,
-										});
-									}
-								}
-
-								const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
-								setItems(i.concat(extraItems));
-							}}
-							disabled={isStashDataFetching || isSnapshotDataFetching || isSnapshotItemDataFetching}
+							onClick={handleSnapshotButton}
+							disabled={!selectedProfileId || isSnapshotDataFetching || isSnapshotItemDataFetching}
 						>
 							Take Snapshot
 						</Button>
-						<ActionIcon onClick={open} size="lg" variant="outline" aria-label="Show notifications">
-							<IconPlus size="16px" />
-						</ActionIcon>
-						<ActionIcon aria-label="Delete snapshots" variant="outline" size="lg" color="red">
-							<IconTrash size="16px" />
-						</ActionIcon>
+						<Divider orientation="vertical" />
 						<ActionIcon size="lg" variant="outline" aria-label="Show notifications">
 							<IconBell size="16px" />
 						</ActionIcon>
-						<ProfileModal isOpen={opened} onClose={close} />
+						<ProfileModal
+							isOpen={isAddProfileModalOpen}
+							onClose={closeAddProfileModal}
+							setSelectedProfile={setSelectedProfileId}
+						/>
+						<EditProfileModal
+							isOpen={isEditProfileModalOpen}
+							onClose={closeEditProfileModal}
+							profileData={profilesData.find((x) => x.profile.id === selectedProfileId)}
+						/>
 					</Flex>
 				</Flex>
 			</Paper>
@@ -151,9 +182,12 @@ const TopBar = ({ setItems }: Props) => {
 const useStyles = createStyles((theme) => ({
 	root: {
 		padding: `0 calc(${theme.spacing.md} * 1.5)`,
-		position: 'relative',
+		position: 'fixed',
+		top: 0,
+		width: '100%',
 		background: 'black',
 		marginBottom: '12px',
+		zIndex: 9999,
 	},
 	logoContainer: {
 		padding: '12px',

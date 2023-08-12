@@ -9,6 +9,7 @@ import { invoke } from '@tauri-apps/api';
 function App() {
 	const [items, setItems] = useState<Item[]>([]);
 	const [total, setTotal] = useState(0);
+	const [selectedProfileId, setSelectedProfileId] = useState<number | bigint | null>(null);
 
 	const MINUTE_MS = 60000;
 
@@ -29,9 +30,13 @@ function App() {
 
 	return (
 		<>
-			<TopBar setItems={setItems} />
+			<TopBar
+				selectedProfileId={selectedProfileId}
+				setSelectedProfileId={setSelectedProfileId}
+				setItems={setItems}
+			/>
 			<Flex justify={'center'} pt="5px" w="100%">
-				<SampleStats total={total} />
+				<SampleStats total={total} selectedProfileId={selectedProfileId} />
 			</Flex>
 			<ItemTable items={items} setTotal={setTotal} />
 		</>
