@@ -139,6 +139,7 @@ const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) =>
 								value: String(profile.id),
 							}))}
 							disabled={profilesData.length < 1 || isProfilesLoading}
+							type="text"
 						/>
 						<ActionIcon
 							onClick={openAddProfileModal}
