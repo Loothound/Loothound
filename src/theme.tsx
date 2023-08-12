@@ -12,7 +12,6 @@ const theme: MantineThemeOverride = {
 	},
 	globalStyles: (theme) => ({
 		body: {
-			marginTop: 80,
 			background:
 				theme.colorScheme === 'dark'
 					? theme.fn.radialGradient(theme.colors.dark[9], theme.colors.dark[8])

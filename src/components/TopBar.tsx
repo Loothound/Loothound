@@ -182,7 +182,7 @@ const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) =>
 const useStyles = createStyles((theme) => ({
 	root: {
 		padding: `0 calc(${theme.spacing.md} * 1.5)`,
-		position: 'fixed',
+		position: 'sticky',
 		top: 0,
 		width: '100%',
 		background: 'black',
