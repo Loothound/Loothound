@@ -25,6 +25,8 @@ client.interceptors.response.use(
 		console.log(error);
 		if (error.response.status === 401) {
 			localStorage.removeItem('oauth_token');
+			localStorage.removeItem('refresh_token');
+			localStorage.removeItem('valid_until');
 			window.location.href = '/';
 		}
 		return error;

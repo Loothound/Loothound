@@ -11,9 +11,10 @@ export default function Login() {
 	const { classes } = useStyles();
 
 	const token = useAuth();
-	if (token !== '') {
+	if (localStorage.getItem('oauth_token') || token !== '') {
 		return <Navigate to={'/home'} />;
 	}
+
 	return (
 		<Flex className={classes.root}>
 			<Flex className={classes.leftContent}>
