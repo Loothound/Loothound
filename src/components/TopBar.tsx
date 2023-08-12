@@ -2,11 +2,17 @@ import { ActionIcon, Button, Flex, Paper, Select, Title, createStyles } from '@m
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconPlus, IconTrash } from '@tabler/icons-react';
 import { invoke } from '@tauri-apps/api';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fetch_stashes } from '../api/client';
-import { useGetProfiles, useGetSingleStash, useGetSnapshots } from '../services/services';
+import {
+	useGetProfiles,
+	useGetSingleStash,
+	useGetSnapshotItems,
+	useGetSnapshots,
+} from '../services/services';
 import { Item } from '../types/types';
 import ProfileModal from './ProfileModal';
+import { Snapshot } from '../bindings';
 
 type Props = {
 	setItems: React.Dispatch<React.SetStateAction<Item[]>>;
@@ -42,7 +48,16 @@ const TopBar = ({ setItems }: Props) => {
 		}
 	);
 
-	console.log(selectedProfile, snapshotData);
+	const latestSnapshot = snapshotData?.[0];
+
+	const { data: snapshotItemsData, isFetching: isSnapshotItemDataFetching } = useGetSnapshotItems(
+		latestSnapshot as Snapshot,
+		{ enabled: !!latestSnapshot }
+	);
+
+	useEffect(() => {
+		setItems(snapshotItemsData as Item[]);
+	}, [selectedProfile]);
 
 	return (
 		<>
@@ -112,7 +127,7 @@ const TopBar = ({ setItems }: Props) => {
 								const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
 								setItems(i.concat(extraItems));
 							}}
-							disabled={isStashDataFetching || isSnapshotDataFetching}
+							disabled={isStashDataFetching || isSnapshotDataFetching || isSnapshotItemDataFetching}
 						>
 							Take Snapshot
 						</Button>

@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/tauri';
 import { fetchStashes, getSingleStash } from '../api/api';
-import { Snapshot, getProfiles, listSnapshots } from '../api/db';
+import { Snapshot, fetchSnapshotItems, getProfiles, listSnapshots } from '../api/db';
 import { CreateProfilePayload } from '../components/ProfileModal';
-import { profile } from 'console';
 
 export const useFetchStashes = () => useQuery(['stashes'], fetchStashes, { staleTime: 120000 });
 
@@ -33,3 +32,6 @@ export const useAddSnapshot = () => {
 
 export const useGetSnapshots = (profileId: number, options?: Record<string, any>) =>
 	useQuery(['snapshots', profileId], () => listSnapshots(profileId), options);
+
+export const useGetSnapshotItems = (snapshot: Snapshot, options: Record<string, any>) =>
+	useQuery(['snapshotItems', snapshot], () => fetchSnapshotItems(snapshot), options);

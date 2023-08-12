@@ -3,9 +3,9 @@
 
 export * from "./Snapshot"
 export * from "./Item"
-export * from "./ItemProperty"
 export * from "./Price"
 export * from "./ProfileStashAssoc"
+export * from "./ItemProperty"
 export * from "./Stash"
 export * from "./Profile"
 export * from "./ProfileWithStashes"
