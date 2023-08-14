@@ -3,11 +3,11 @@ import ItemTable from './components/ItemTable';
 import { SampleStats } from './components/SampleStats';
 import TopBar from './components/TopBar';
 import { useState, useEffect } from 'react';
-import { Item } from './types/types';
+import { Snapshot } from './bindings';
 import { invoke } from '@tauri-apps/api';
 
 function App() {
-	const [items, setItems] = useState<Item[]>([]);
+	const [snapshot, setSnapshot] = useState<Snapshot>({} as unknown as Snapshot);
 	const [total, setTotal] = useState(0);
 	const [selectedProfileId, setSelectedProfileId] = useState<number | bigint | null>(null);
 
@@ -33,12 +33,12 @@ function App() {
 			<TopBar
 				selectedProfileId={selectedProfileId}
 				setSelectedProfileId={setSelectedProfileId}
-				setItems={setItems}
+				setSnapshot={setSnapshot}
 			/>
 			<Flex justify={'center'} pt="5px" w="100%">
 				<SampleStats total={total} selectedProfileId={selectedProfileId} />
 			</Flex>
-			<ItemTable items={items} setTotal={setTotal} />
+			<ItemTable snapshot={snapshot} setTotal={setTotal} />
 		</>
 	);
 }

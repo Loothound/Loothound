@@ -1,19 +1,14 @@
 import { Box, Flex, createStyles } from '@mantine/core';
-import { invoke } from '@tauri-apps/api';
 import { sortBy } from 'lodash';
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
+import { basicallyThisUseEffect, Snapshot } from '../api/db';
 import { Item } from '../types/types';
 
 type Props = {
-	items: Item[];
+	snapshot: Snapshot;
 	setTotal: React.Dispatch<React.SetStateAction<number>>;
 };
-
-interface ItemWithPrice {
-	item: Item;
-	price: number;
-}
 
 interface ItemRecord {
 	name: string;
@@ -23,9 +18,9 @@ interface ItemRecord {
 	icon: string;
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 14;
 
-const ItemTable = ({ items, setTotal }: Props) => {
+const ItemTable = ({ snapshot, setTotal }: Props) => {
 	const { classes } = useStyles();
 	const [records, setRecords] = useState<ItemRecord[]>([]);
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
@@ -37,38 +32,31 @@ const ItemTable = ({ items, setTotal }: Props) => {
 
 	useEffect(() => {
 		setIsLoading(true);
-		const r = [];
-		let total = 0;
+		if (!('id' in snapshot)) {
+			setIsLoading(false);
+			return;
+		}
 		(async () => {
-			for (const item of items) {
-				const itemWithPrice: ItemWithPrice = { item: item, price: 0 };
-				const name = item.name.length > 0 ? item.name : item.typeLine;
-				itemWithPrice.price = await invoke('plugin:sql|check_price', { name: name });
-				if (name === 'Chaos Orb') {
-					itemWithPrice.price = 1;
-				}
-				const { item: itemObj, price } = itemWithPrice;
+			const res = await basicallyThisUseEffect(snapshot);
+			const r: ItemRecord[] = [];
+			for (const item_data of res.items) {
+				const item = item_data.item;
+				const value = item_data.price;
+				const amount = item.stackSize ? Number(item.stackSize) : 1;
 				r.push({
-					gggId: itemObj.id,
-					name: itemObj.name.length > 0 ? itemObj.name : itemObj.typeLine,
-					type: itemObj.baseType,
-					amount: itemObj.stackSize ? itemObj.stackSize : 1,
-					value: Math.round(
-						(itemObj.typeLine === 'Chaos Orb' ? 1 : price) *
-							(itemObj.stackSize ? itemObj.stackSize : 1)
-					),
-					icon: itemObj.icon,
+					name: item.name,
+					type: item.typeLine,
+					amount: amount,
+					value: value,
+					icon: item.icon,
 				});
-				total += Math.round(price * (item.stackSize ? item.stackSize : 1));
 			}
 			const data = sortBy(r, sortStatus.columnAccessor);
 			setRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
-			const divine = r.find((x) => x.name === 'Divine Orb');
-			const divPrice = (divine?.value || 1) / (divine?.amount || 1);
-			setTotal(total / (divPrice || 1));
+			setTotal(res.total_div);
 			setIsLoading(false);
 		})();
-	}, [items]);
+	}, [snapshot]);
 
 	useEffect(() => {
 		const data = sortBy(records, sortStatus.columnAccessor);

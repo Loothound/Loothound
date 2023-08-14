@@ -21,12 +21,12 @@ import EditProfileModal from './EditProfileModal';
 import ProfileModal from './ProfileModal';
 
 type Props = {
-	setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+	setSnapshot: React.Dispatch<React.SetStateAction<Snapshot>>;
 	selectedProfileId: number | bigint | null;
 	setSelectedProfileId: React.Dispatch<React.SetStateAction<number | bigint | null>>;
 };
 
-const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) => {
+const TopBar = ({ setSnapshot, selectedProfileId, setSelectedProfileId }: Props) => {
 	const queryClient = useQueryClient();
 	const { classes } = useStyles();
 
@@ -45,21 +45,16 @@ const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) =>
 
 	const latestSnapshot = snapshotData?.[0];
 
-	const { data: snapshotItemsData, isFetching: isSnapshotItemDataFetching } = useGetSnapshotItems(
-		latestSnapshot as Snapshot,
-		{ enabled: !!latestSnapshot, onSuccess: (data: Item[]) => setItems(data) }
-	);
-
 	useEffect(() => {
-		if (snapshotItemsData) {
-			setItems(snapshotItemsData as Item[]);
+		if (latestSnapshot != undefined) {
+			setSnapshot(latestSnapshot);
 		} else {
-			setItems([]);
+			setSnapshot({} as unknown as Snapshot);
 		}
 	}, [selectedProfileId, latestSnapshot]);
 
 	const handleSnapshotButton = async () => {
-		const snapshot = await invoke('plugin:sql|new_snapshot', {
+		const snapshot: Snapshot = await invoke('plugin:sql|new_snapshot', {
 			profileId: selectedProfileId,
 		});
 
@@ -70,6 +65,8 @@ const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) =>
 		);
 
 		const extraItems: Item[] = [];
+
+		let total = 0;
 
 		for (const stashtab of s) {
 			if (stashtab.type == 'MapStash') {
@@ -94,16 +91,15 @@ const TopBar = ({ setItems, selectedProfileId, setSelectedProfileId }: Props) =>
 					extraItems.push(item);
 				}
 			} else {
-				await invoke('plugin:sql|add_items_to_snapshot', {
+				total = await invoke('plugin:sql|add_items_to_snapshot', {
 					snapshot: snapshot,
 					items: stashtab.items,
 					stashId: stashtab.id,
 				});
 			}
 		}
-
-		const i = s.filter((x) => 'items' in x).flatMap((x) => x.items) as Item[];
-		setItems(i.concat(extraItems));
+		snapshot.value = total;
+		setSnapshot(snapshot);
 	};
 
 	return (
