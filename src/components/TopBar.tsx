@@ -43,7 +43,7 @@ const TopBar = ({ setSnapshot, selectedProfileId, setSelectedProfileId }: Props)
 		}
 	);
 
-	const latestSnapshot = snapshotData?.[0];
+	const latestSnapshot = snapshotData?.[snapshotData?.length - 1];
 
 	useEffect(() => {
 		if (latestSnapshot != undefined) {

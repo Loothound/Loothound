@@ -43,7 +43,11 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 		if (!snapshots) return 0;
 		if (snapshots.length === 0) return 0;
 		if (snapshots.length === 1) return snapshots[0].pricing_revision;
-		if (snapshots.length >= 2) return snapshots[0].pricing_revision + snapshots[1].pricing_revision;
+		if (snapshots.length >= 2) {
+			return (
+				(snapshots[snapshots.length - 1].value / snapshots[snapshots.length - 2].value - 1) * 100
+			);
+		}
 	};
 
 	function getData(total: number): StatsGridData[] {
@@ -54,7 +58,7 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 				value:
 					total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
 					' div',
-				diff: Number(getDiff(snapshotData)),
+				diff: Number(getDiff(snapshotData)).toFixed(2),
 			},
 			{
 				title: 'Income',
