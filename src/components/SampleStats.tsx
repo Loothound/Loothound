@@ -6,16 +6,19 @@ import {
 	IconClockHour3,
 	IconCoin,
 } from '@tabler/icons-react';
+import { useGetSnapshots } from '../services/services';
+import { Snapshot } from '../bindings';
 
 type Props = {
 	total: number;
+	selectedProfileId: number | bigint | null;
 };
 
 interface StatsGridData {
 	title: string;
 	icon: keyof typeof icons;
 	value: string;
-	diff: number;
+	diff?: number;
 }
 
 const icons = {
@@ -24,40 +27,61 @@ const icons = {
 	snapshot: IconClockHour3,
 };
 
-function getData(total: number): StatsGridData[] {
-	console.log(total);
-	return [
-		{
-			title: 'Net Worth',
-			icon: 'netWorth',
-			value: total.toFixed(2) + ' div',
-			diff: 24,
-		},
-		{
-			title: 'Income',
-			icon: 'income',
-			value: '420',
-			diff: 24,
-		},
-		{
-			title: 'Snapshot Count',
-			icon: 'snapshot',
-			value: '1',
-			diff: 0,
-		},
-	];
-}
-
-export function SampleStats({ total }: Props) {
+export function SampleStats({ total, selectedProfileId }: Props) {
 	const { classes } = useStyles();
+
+	const { data: snapshotData } = useGetSnapshots(Number(selectedProfileId), {
+		enabled: !!selectedProfileId,
+	});
+
+	const getDiff = (snapshots: Snapshot[] | undefined) => {
+		if (!snapshots) return 0;
+		if (snapshots.length === 0) return 0;
+		if (snapshots.length === 1) return snapshots[0].pricing_revision;
+		if (snapshots.length >= 2) {
+			if (snapshots[snapshots.length - 1].value === snapshots[snapshots.length - 2].value) return 0;
+			return (
+				(snapshots[snapshots.length - 1].value / snapshots[snapshots.length - 2].value - 1) * 100
+			);
+		}
+	};
+
+	function getData(total: number): StatsGridData[] {
+		return [
+			{
+				title: 'Net Worth',
+				icon: 'netWorth',
+				value:
+					total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+					' div',
+				diff: Number(getDiff(snapshotData)).toFixed(2),
+			},
+			{
+				title: 'Income',
+				icon: 'income',
+				value:
+					Number(420).toLocaleString(undefined, {
+						minimumFractionDigits: 2,
+						maximumFractionDigits: 2,
+					}) + '/h',
+				diff: 0,
+			},
+			{
+				title: 'Snapshot Count',
+				icon: 'snapshot',
+				value: snapshotData ? String(snapshotData?.length) : '0',
+			},
+		];
+	}
+
 	const stats = getData(total).map((stat) => {
 		const Icon = icons[stat.icon];
-		const DiffIcon = stat.diff > 0 ? IconArrowUpRight : IconArrowDownRight;
+		const DiffIcon = stat.diff && stat.diff > 0 ? IconArrowUpRight : IconArrowDownRight;
 
 		return (
 			<Paper withBorder p="md" radius="md" key={stat.title}>
 				<Group position="apart">
-					<Text size="xs" color="dimmed" className={classes.title}>
+					<Text size="xs" className={classes.title}>
 						{stat.title}
 					</Text>
 					<Icon className={classes.icon} size="24px" stroke={1.5} />
@@ -65,15 +89,31 @@ export function SampleStats({ total }: Props) {
 
 				<Group align="flex-end" spacing="xs" mt={36}>
 					<Text className={classes.value}>{stat.value}</Text>
-					<Text color={stat.diff > 0 ? 'teal' : 'red'} fz="sm" fw={500} className={classes.diff}>
-						<span>{stat.diff}%</span>
-						<DiffIcon size="16px" stroke={1.5} />
+					<Text
+						color={Number(stat.diff) > 0 ? 'teal' : Number(stat.diff) === 0 ? 'white' : 'red'}
+						fz="sm"
+						fw={500}
+						className={classes.diff}
+					>
+						{stat.diff ? (
+							<>
+								<span>{stat.diff}%</span>
+								{stat.diff && stat.diff > 1 && stat.diff && stat.diff < 0 && (
+									<DiffIcon size="16px" stroke={1.5} />
+								)}
+							</>
+						) : (
+							<></>
+						)}
 					</Text>
 				</Group>
-
-				<Text fz="xs" c="dimmed" mt={7}>
-					Compared to previous snapshot
-				</Text>
+				{stat.diff ? (
+					<Text fz="xs" c="dimmed" mt={7}>
+						Compared to previous snapshot
+					</Text>
+				) : (
+					<></>
+				)}
 			</Paper>
 		);
 	});

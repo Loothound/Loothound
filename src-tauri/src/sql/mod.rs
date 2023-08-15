@@ -212,12 +212,21 @@ async fn new_snapshot(con: State<'_, DbCon>, profile_id: i64) -> Result<Snapshot
         .await
         .map_err(Error::Sql)?;
 
-    sqlx::query_as::<_, Snapshot>(
-        "INSERT INTO snapshots (profile_id, timestamp, pricing_revision) VALUES (?, ?, ?) RETURNING *",
+    sqlx::query(
+        "INSERT INTO snapshots (profile_id, timestamp, pricing_revision, value) VALUES (?, ?, ?, ?)",
     )
     .bind(profile_id)
     .bind(chrono::Local::now().naive_utc())
     .bind(pricing_revision.0)
+    .bind(0.0)
+    .execute(pool)
+    .await
+    .map_err(Error::Sql)?;
+
+    sqlx::query_as::<_, Snapshot>(
+        "SELECT * FROM snapshots WHERE profile_id = ? ORDER BY id DESC LIMIT 1",
+    )
+    .bind(profile_id)
     .fetch_one(pool)
     .await
     .map_err(Error::Sql)
@@ -229,23 +238,61 @@ async fn add_items_to_snapshot(
     snapshot: Snapshot,
     items: Vec<Item>,
     stash_id: String,
-) -> Result<()> {
+) -> Result<f64> {
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
     let snapshot_id = snapshot.id;
 
+    let mut counter = 0.0;
+
     for item in items {
         let json_item = serde_json::to_string(&item).unwrap();
-        sqlx::query("INSERT INTO item (snapshot_id, stash_id, data) VALUES (?, ?, ?)")
+        let name = if item.name.len() > 0 {
+            item.name
+        } else {
+            item.type_line
+        };
+        let mut price = sqlx::query_as::<_, Price>(
+            "SELECT * FROM price WHERE name LIKE ? AND revision = ? LIMIT 1",
+        )
+        .bind(&name)
+        .bind(snapshot.pricing_revision)
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)
+        .map_or(0.0, |x| x.price);
+
+        if &name == "Chaos Orb" {
+            price = 1.0;
+        }
+
+        counter += price * item.stack_size.unwrap_or(1) as f64;
+
+        sqlx::query("INSERT INTO item (snapshot_id, stash_id, data, value) VALUES (?, ?, ?, ?)")
             .bind(snapshot_id)
             .bind(&stash_id)
             .bind(json_item)
+            .bind(price * item.stack_size.unwrap_or(1) as f64)
             .execute(pool)
             .await
             .map_err(Error::Sql)?;
     }
 
-    Ok(())
+    sqlx::query("UPDATE snapshots SET value = ? WHERE id = ?")
+        .bind(counter)
+        .bind(snapshot.id)
+        .execute(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    Ok(
+        sqlx::query_as::<_, (f64,)>("SELECT value FROM snapshots WHERE id = ?")
+            .bind(snapshot.id)
+            .fetch_one(pool)
+            .await
+            .map_err(Error::Sql)?
+            .0,
+    )
 }
 
 #[tauri::command]
@@ -525,6 +572,41 @@ async fn oopsie<R: Runtime>(con: State<'_, DbCon>, app: AppHandle<R>) -> Result<
     Ok(())
 }
 
+#[tauri::command]
+async fn basically_this_use_effect(
+    con: State<'_, DbCon>,
+    snapshot: Snapshot,
+) -> Result<UseEffectResponse> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    let item_rows = sqlx::query_as::<_, ItemRow>("SELECT * FROM item WHERE snapshot_id = ?")
+        .bind(snapshot.id)
+        .fetch_all(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    let snapshot_div_price =
+        sqlx::query_as::<_, Price>("SELECT  * FROM price WHERE name = ? AND revision = ? LIMIT 1")
+            .bind("Divine Orb")
+            .bind(snapshot.pricing_revision)
+            .fetch_one(pool)
+            .await
+            .map_err(Error::Sql)?;
+
+    Ok(UseEffectResponse {
+        items: item_rows
+            .iter()
+            .map(|x| ItemWithPrice {
+                item: x.data.clone().0,
+                price: x.value,
+            })
+            .collect(),
+        total_chaos: snapshot.value,
+        total_div: snapshot.value / snapshot_div_price.price,
+    })
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("sql")
         .setup(|app| {
@@ -563,7 +645,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             update_profile,
             has_recent_prices,
             snapshot_fetch_items,
-            oopsie
+            oopsie,
+            basically_this_use_effect
         ])
         .build()
 }

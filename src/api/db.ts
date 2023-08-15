@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api';
-import { Stash, Profile, ProfileWithStashes, Snapshot, Item } from '../bindings';
+import { Stash, Profile, ProfileWithStashes, Snapshot, Item, UseEffectResponse } from '../bindings';
 
 export * from '../bindings';
 
@@ -29,8 +29,12 @@ export async function newSnapshot(profileId: number): Promise<Snapshot> {
 	return await invoke('plugin:sql|new_snapshot', { profileId });
 }
 
-export async function addItemsToSnapshot(snapshot: Snapshot, items: Item[], stashId: string) {
-	await invoke('plugin:sql|add_items_to_snapshot', { snapshot, items, stashId });
+export async function addItemsToSnapshot(
+	snapshot: Snapshot,
+	items: Item[],
+	stashId: string
+): number {
+	return await invoke('plugin:sql|add_items_to_snapshot', { snapshot, items, stashId });
 }
 
 export async function snapshotSetValue(snapshot: Snapshot, value: number) {
@@ -62,4 +66,8 @@ export async function updateProfile(
 
 export async function oopsie() {
 	return await invoke('plugin:sql|oopsie');
+}
+
+export async function basicallyThisUseEffect(snapshot: Snapshot): Promise<UseEffectResponse> {
+	return await invoke('plugin:sql|basically_this_use_effect', { snapshot });
 }

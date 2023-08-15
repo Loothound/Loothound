@@ -4,11 +4,12 @@ DROP TABLE item;
 CREATE TABLE snapshots (
     id INTEGER PRIMARY KEY,
     profile_id INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
+    timestamp TEXT NOT NULL,
     pricing_revision INTEGER NOT NULL,
+    value REAL NOT NULL,
 
     FOREIGN KEY(profile_id) REFERENCES profiles(id)
-);
+) STRICT;
 
 CREATE TABLE item (
     id INTEGER PRIMARY KEY,
@@ -18,4 +19,4 @@ CREATE TABLE item (
 
     FOREIGN KEY(stash_id) REFERENCES stashes(id),
     FOREIGN KEY(snapshot_id) REFERENCES snapshots(id)
-);
+) STRICT;

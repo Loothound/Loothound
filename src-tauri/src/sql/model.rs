@@ -32,7 +32,7 @@ pub struct ProfileStashAssoc {
     pub stash_id: String,
 }
 
-#[derive(FromRow, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, TS)]
+#[derive(FromRow, Debug, PartialEq, serde::Serialize, serde::Deserialize, TS)]
 #[ts(export, export_to = "../src/bindings/")]
 pub struct Snapshot {
     pub id: i64,
@@ -40,6 +40,7 @@ pub struct Snapshot {
     #[ts(type = "string")]
     pub timestamp: sqlx::types::chrono::NaiveDateTime,
     pub pricing_revision: i64,
+    pub value: f64,
 }
 
 #[derive(FromRow, Debug, PartialEq)]
@@ -48,6 +49,7 @@ pub struct ItemRow {
     pub snapshot_id: i64,
     pub stash_id: String,
     pub data: sqlx::types::Json<Item>,
+    pub value: f64,
 }
 
 #[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, Clone, TS)]
@@ -84,4 +86,19 @@ pub struct Price {
     pub fully_linked: bool,
     #[ts(type = "string")]
     pub timestamp: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export, export_to = "../src/bindings/")]
+pub struct UseEffectResponse {
+    pub items: Vec<ItemWithPrice>,
+    pub total_chaos: f64,
+    pub total_div: f64,
+}
+
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export, export_to = "../src/bindings/")]
+pub struct ItemWithPrice {
+    pub item: Item,
+    pub price: f64,
 }

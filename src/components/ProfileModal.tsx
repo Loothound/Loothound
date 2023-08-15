@@ -2,13 +2,15 @@ import { Button, Flex, Modal, MultiSelect, Select, TextInput } from '@mantine/co
 import { useForm } from '@mantine/form';
 import { useAddProfile, useFetchStashes } from '../services/services';
 import { StashTab } from '../types/types';
+import { Dispatch, SetStateAction } from 'react';
 
 type Props = {
 	isOpen: boolean;
 	onClose: () => void;
+	setSelectedProfile: Dispatch<SetStateAction<number | bigint | null>>;
 };
 
-const ProfileModal = ({ isOpen, onClose }: Props) => {
+const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
 	const { data: stashesData = [], isLoading: isStashesDataLoading } = useFetchStashes();
 
 	const addProfileMutation = useAddProfile();
@@ -30,8 +32,9 @@ const ProfileModal = ({ isOpen, onClose }: Props) => {
 	});
 
 	const handleFormSubmit = async (values: CreateProfilePayload) => {
-		addProfileMutation.mutate(values);
+		const profileMutation = await addProfileMutation.mutateAsync(values);
 		form.reset();
+		setSelectedProfile(profileMutation.id);
 		onClose();
 	};
 

@@ -1,81 +1,69 @@
-import { Box, createStyles } from '@mantine/core';
-import { invoke } from '@tauri-apps/api';
-import { randomBytes } from 'crypto';
+import { Box, Flex, createStyles } from '@mantine/core';
 import { sortBy } from 'lodash';
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
-import { Item } from '../types/types';
+import { Snapshot, basicallyThisUseEffect } from '../api/db';
 
 type Props = {
-	items: Item[];
+	snapshot: Snapshot;
 	setTotal: React.Dispatch<React.SetStateAction<number>>;
+	isSnapshotLoading: boolean;
+	setIsSnapshotLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-interface ItemWithPrice {
-	item: Item;
-	price: number;
+interface ItemRecord {
+	gggId: string;
+	name: string;
+	amount: number;
+	value: number;
+	icon: string;
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 14;
 
-const ItemTable = ({ items, setTotal }: Props) => {
+const ItemTable = ({ snapshot, setTotal, isSnapshotLoading }: Props) => {
 	const { classes } = useStyles();
-	const [itemsWithPrice, setItemsWithPrice] = useState<ItemWithPrice[]>([]);
-	const [records, setRecords] = useState<
-		{
-			name: string;
-			type: string;
-			amount: number;
-			value: number;
-			icon: string;
-		}[]
-	>([]);
+	const [records, setRecords] = useState<ItemRecord[]>([]);
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
-		columnAccessor: 'name',
-		direction: 'asc',
+		columnAccessor: 'value',
+		direction: 'desc',
 	});
 	const [page, setPage] = useState(1);
+	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
-		(async () => {
-			const i = [];
-			for (const item of items) {
-				const itemWithPrice: ItemWithPrice = { item: item, price: 0 };
-				const name = item.name.length > 0 ? item.name : item.typeLine;
-				itemWithPrice.price = await invoke('plugin:sql|check_price', { name: name });
-				if (name === 'Chaos Orb') {
-					itemWithPrice.price = 1;
-				}
-				i.push(itemWithPrice);
-			}
-			setItemsWithPrice(i);
-		})();
-	}, [items]);
-
-	useEffect(() => {
-		const r = [];
-		let total = 0;
-		for (const i of itemsWithPrice) {
-			const { item, price } = i;
-			r.push({
-				name: item.name.length > 0 ? item.name : item.typeLine,
-				type: item.baseType,
-				amount: item.stackSize ? item.stackSize : 1,
-				value: Math.round(
-					(item.typeLine === 'Chaos Orb' ? 1 : price) * (item.stackSize ? item.stackSize : 1)
-				),
-				icon: item.icon,
-			});
-			total += Math.round(price * (item.stackSize ? item.stackSize : 1));
+		if (!('id' in snapshot)) {
+			console.log('this ran');
+			return;
 		}
-		setRecords(r);
-		const divPrice = itemsWithPrice.find((x) => x.item.typeLine === 'Divine Orb')?.price;
-		setTotal(total / (divPrice || 1));
-	}, [itemsWithPrice]);
+		(async () => {
+			console.log('this ran 2');
+			setIsLoading(true);
+			const res = await basicallyThisUseEffect(snapshot);
+			const r: ItemRecord[] = [];
+			for (const item_data of res.items) {
+				const item = item_data.item;
+				const value = item_data.price;
+				const amount = item.stackSize ? Number(item.stackSize) : 1;
+				r.push({
+					gggId: item.id as string,
+					name: item.name ? `${item.name} ${item.typeLine}` : item.typeLine,
+					amount: amount,
+					value: value,
+					icon: item.icon,
+				});
+			}
+			const data = sortBy(r, sortStatus.columnAccessor);
+			setRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
+			setTotal(res.total_div);
+			setIsLoading(false);
+		})();
+	}, [snapshot]);
 
 	useEffect(() => {
 		const data = sortBy(records, sortStatus.columnAccessor);
 		setRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
+		console.log(sortBy(records, sortStatus.columnAccessor));
 	}, [sortStatus]);
 
 	return (
@@ -89,24 +77,39 @@ const ItemTable = ({ items, setTotal }: Props) => {
 				highlightOnHover
 				records={records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
 				minHeight={200}
+				idAccessor="gggId"
+				fetching={isLoading || isSnapshotLoading}
 				columns={[
 					{
 						accessor: 'icon',
 						// Icon image thingy from PoE API seems to always be 47px², scaling it down a bit for the UI
-						render: ({ icon }) => <img src={icon} height="40px"></img>,
-						width: '60px',
+						render: ({ icon }) => (
+							<Flex justify={'center'}>
+								<img src={icon} height="32px" />
+							</Flex>
+						),
 					},
-					{ accessor: 'name', sortable: true },
-					{ accessor: 'type' },
+					{
+						accessor: 'name',
+						sortable: true,
+					},
 					{ accessor: 'amount', sortable: true },
-					{ accessor: 'value', sortable: true },
+					{
+						accessor: 'value',
+						sortable: true,
+						render: ({ value }) =>
+							value.toLocaleString(undefined, {
+								maximumFractionDigits: 2,
+								minimumFractionDigits: 2,
+							}),
+					},
 				]}
 				sortStatus={sortStatus}
 				onSortStatusChange={setSortStatus}
 				page={page}
 				onPageChange={setPage}
 				recordsPerPage={PAGE_SIZE}
-				totalRecords={itemsWithPrice.length}
+				totalRecords={records.length}
 			/>
 		</Box>
 	);
