@@ -15,7 +15,7 @@ import { invoke } from '@tauri-apps/api';
 import { useEffect } from 'react';
 import { fetch_stashes } from '../api/client';
 import { Snapshot } from '../bindings';
-import { useGetProfiles, useGetSnapshotItems, useGetSnapshots } from '../services/services';
+import { useGetProfiles, useGetSnapshots } from '../services/services';
 import { Item } from '../types/types';
 import EditProfileModal from './EditProfileModal';
 import ProfileModal from './ProfileModal';
@@ -24,9 +24,15 @@ type Props = {
 	setSnapshot: React.Dispatch<React.SetStateAction<Snapshot>>;
 	selectedProfileId: number | bigint | null;
 	setSelectedProfileId: React.Dispatch<React.SetStateAction<number | bigint | null>>;
+	setIsSnapshotLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const TopBar = ({ setSnapshot, selectedProfileId, setSelectedProfileId }: Props) => {
+const TopBar = ({
+	setSnapshot,
+	selectedProfileId,
+	setSelectedProfileId,
+	setIsSnapshotLoading,
+}: Props) => {
 	const queryClient = useQueryClient();
 	const { classes } = useStyles();
 
@@ -36,12 +42,11 @@ const TopBar = ({ setSnapshot, selectedProfileId, setSelectedProfileId }: Props)
 		useDisclosure(false);
 
 	const { data: profilesData = [], isLoading: isProfilesLoading } = useGetProfiles();
-	const { data: snapshotData, isFetching: isSnapshotDataFetching } = useGetSnapshots(
-		Number(selectedProfileId),
-		{
-			enabled: !!selectedProfileId,
-		}
-	);
+	const { data: snapshotData } = useGetSnapshots(Number(selectedProfileId), {
+		enabled: !!selectedProfileId,
+	});
+
+	console.log(snapshotData);
 
 	const latestSnapshot = snapshotData?.[snapshotData?.length - 1];
 
@@ -54,6 +59,7 @@ const TopBar = ({ setSnapshot, selectedProfileId, setSelectedProfileId }: Props)
 	}, [selectedProfileId, latestSnapshot]);
 
 	const handleSnapshotButton = async () => {
+		setIsSnapshotLoading(true);
 		const snapshot: Snapshot = await invoke('plugin:sql|new_snapshot', {
 			profileId: selectedProfileId,
 		});
@@ -90,12 +96,14 @@ const TopBar = ({ setSnapshot, selectedProfileId, setSelectedProfileId }: Props)
 					});
 					extraItems.push(item);
 				}
+				setIsSnapshotLoading(false);
 			} else {
 				total = await invoke('plugin:sql|add_items_to_snapshot', {
 					snapshot: snapshot,
 					items: stashtab.items,
 					stashId: stashtab.id,
 				});
+				setIsSnapshotLoading(false);
 			}
 		}
 		snapshot.value = total;

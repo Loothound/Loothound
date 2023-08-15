@@ -41,9 +41,12 @@ export const useGetProfiles = () => useQuery(['profiles'], getProfiles);
 export const useAddSnapshot = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation((profileId) => invoke('plugin:sql|new_snapshot', { profileId }), {
-		onSuccess: (data: Snapshot) => queryClient.invalidateQueries(['snapshots', data.profile_id]),
-	});
+	return useMutation<Snapshot, unknown, number | bigint | null>(
+		(profileId) => invoke('plugin:sql|new_snapshot', { profileId }),
+		{
+			onSuccess: (data: Snapshot) => queryClient.invalidateQueries(['snapshots', data.profile_id]),
+		}
+	);
 };
 
 export const useGetSnapshots = (profileId: number, options?: Record<string, any>) =>

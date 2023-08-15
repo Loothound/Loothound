@@ -2,17 +2,18 @@ import { Box, Flex, createStyles } from '@mantine/core';
 import { sortBy } from 'lodash';
 import { DataTable, DataTableSortStatus } from 'mantine-datatable';
 import { useEffect, useState } from 'react';
-import { basicallyThisUseEffect, Snapshot } from '../api/db';
-import { Item } from '../types/types';
+import { Snapshot, basicallyThisUseEffect } from '../api/db';
 
 type Props = {
 	snapshot: Snapshot;
 	setTotal: React.Dispatch<React.SetStateAction<number>>;
+	isSnapshotLoading: boolean;
+	setIsSnapshotLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 interface ItemRecord {
+	gggId: string;
 	name: string;
-	type: string;
 	amount: number;
 	value: number;
 	icon: string;
@@ -20,7 +21,7 @@ interface ItemRecord {
 
 const PAGE_SIZE = 14;
 
-const ItemTable = ({ snapshot, setTotal }: Props) => {
+const ItemTable = ({ snapshot, setTotal, isSnapshotLoading }: Props) => {
 	const { classes } = useStyles();
 	const [records, setRecords] = useState<ItemRecord[]>([]);
 	const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
@@ -31,12 +32,13 @@ const ItemTable = ({ snapshot, setTotal }: Props) => {
 	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
-		setIsLoading(true);
 		if (!('id' in snapshot)) {
-			setIsLoading(false);
+			console.log('this ran');
 			return;
 		}
 		(async () => {
+			console.log('this ran 2');
+			setIsLoading(true);
 			const res = await basicallyThisUseEffect(snapshot);
 			const r: ItemRecord[] = [];
 			for (const item_data of res.items) {
@@ -44,8 +46,8 @@ const ItemTable = ({ snapshot, setTotal }: Props) => {
 				const value = item_data.price;
 				const amount = item.stackSize ? Number(item.stackSize) : 1;
 				r.push({
-					name: item.name,
-					type: item.typeLine,
+					gggId: item.id as string,
+					name: item.name ? `${item.name} ${item.typeLine}` : item.typeLine,
 					amount: amount,
 					value: value,
 					icon: item.icon,
@@ -61,6 +63,7 @@ const ItemTable = ({ snapshot, setTotal }: Props) => {
 	useEffect(() => {
 		const data = sortBy(records, sortStatus.columnAccessor);
 		setRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
+		console.log(sortBy(records, sortStatus.columnAccessor));
 	}, [sortStatus]);
 
 	return (
@@ -75,7 +78,7 @@ const ItemTable = ({ snapshot, setTotal }: Props) => {
 				records={records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
 				minHeight={200}
 				idAccessor="gggId"
-				fetching={isLoading}
+				fetching={isLoading || isSnapshotLoading}
 				columns={[
 					{
 						accessor: 'icon',
@@ -86,10 +89,20 @@ const ItemTable = ({ snapshot, setTotal }: Props) => {
 							</Flex>
 						),
 					},
-					{ accessor: 'name', sortable: true },
-					{ accessor: 'type' },
+					{
+						accessor: 'name',
+						sortable: true,
+					},
 					{ accessor: 'amount', sortable: true },
-					{ accessor: 'value', sortable: true },
+					{
+						accessor: 'value',
+						sortable: true,
+						render: ({ value }) =>
+							value.toLocaleString(undefined, {
+								maximumFractionDigits: 2,
+								minimumFractionDigits: 2,
+							}),
+					},
 				]}
 				sortStatus={sortStatus}
 				onSortStatusChange={setSortStatus}

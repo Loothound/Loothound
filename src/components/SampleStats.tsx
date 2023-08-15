@@ -30,20 +30,16 @@ const icons = {
 export function SampleStats({ total, selectedProfileId }: Props) {
 	const { classes } = useStyles();
 
-	const { data: snapshotData, isFetching: isSnapshotDataFetching } = useGetSnapshots(
-		Number(selectedProfileId),
-		{
-			enabled: !!selectedProfileId,
-		}
-	);
-
-	console.log(snapshotData);
+	const { data: snapshotData } = useGetSnapshots(Number(selectedProfileId), {
+		enabled: !!selectedProfileId,
+	});
 
 	const getDiff = (snapshots: Snapshot[] | undefined) => {
 		if (!snapshots) return 0;
 		if (snapshots.length === 0) return 0;
 		if (snapshots.length === 1) return snapshots[0].pricing_revision;
 		if (snapshots.length >= 2) {
+			if (snapshots[snapshots.length - 1].value === snapshots[snapshots.length - 2].value) return 0;
 			return (
 				(snapshots[snapshots.length - 1].value / snapshots[snapshots.length - 2].value - 1) * 100
 			);
@@ -94,7 +90,7 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 				<Group align="flex-end" spacing="xs" mt={36}>
 					<Text className={classes.value}>{stat.value}</Text>
 					<Text
-						color={stat.diff && stat.diff > 0 ? 'teal' : 'red'}
+						color={Number(stat.diff) > 0 ? 'teal' : Number(stat.diff) === 0 ? 'white' : 'red'}
 						fz="sm"
 						fw={500}
 						className={classes.diff}
@@ -102,7 +98,9 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 						{stat.diff ? (
 							<>
 								<span>{stat.diff}%</span>
-								<DiffIcon size="16px" stroke={1.5} />
+								{stat.diff && stat.diff > 1 && stat.diff && stat.diff < 0 && (
+									<DiffIcon size="16px" stroke={1.5} />
+								)}
 							</>
 						) : (
 							<></>

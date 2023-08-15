@@ -8,6 +8,7 @@ import { invoke } from '@tauri-apps/api';
 
 function App() {
 	const [snapshot, setSnapshot] = useState<Snapshot>({} as unknown as Snapshot);
+	const [isSnapshotLoading, setIsSnapshotLoading] = useState(false);
 	const [total, setTotal] = useState(0);
 	const [selectedProfileId, setSelectedProfileId] = useState<number | bigint | null>(null);
 
@@ -34,11 +35,17 @@ function App() {
 				selectedProfileId={selectedProfileId}
 				setSelectedProfileId={setSelectedProfileId}
 				setSnapshot={setSnapshot}
+				setIsSnapshotLoading={setIsSnapshotLoading}
 			/>
 			<Flex justify={'center'} pt="5px" w="100%">
 				<SampleStats total={total} selectedProfileId={selectedProfileId} />
 			</Flex>
-			<ItemTable snapshot={snapshot} setTotal={setTotal} />
+			<ItemTable
+				snapshot={snapshot}
+				setTotal={setTotal}
+				isSnapshotLoading={isSnapshotLoading}
+				setIsSnapshotLoading={setIsSnapshotLoading}
+			/>
 		</>
 	);
 }
