@@ -16,7 +16,6 @@ function App() {
 
 	useEffect(() => {
 		invoke('plugin:sql|has_recent_prices').then((x) => {
-			console.log(x);
 			if (!(x as boolean)) {
 				invoke('plugin:sql|fetch_prices');
 			}
