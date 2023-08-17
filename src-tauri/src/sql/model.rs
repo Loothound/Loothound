@@ -7,6 +7,7 @@ pub struct Stash {
     pub id: String,
     pub name: String,
     pub r#type: String,
+    pub league: String,
 }
 
 #[derive(FromRow, Debug, PartialEq, Eq, Clone, serde::Serialize, serde::Deserialize, TS)]
@@ -86,6 +87,7 @@ pub struct Price {
     pub fully_linked: bool,
     #[ts(type = "string")]
     pub timestamp: chrono::NaiveDateTime,
+    pub league: String,
 }
 
 #[derive(Debug, serde::Serialize, TS)]
