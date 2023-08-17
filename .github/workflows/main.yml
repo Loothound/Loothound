@@ -6,6 +6,7 @@ on:
 
 jobs:
   publish-tauri:
+    environment: Build
     permissions:
       contents: write
     strategy:
