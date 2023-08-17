@@ -88,3 +88,7 @@ export interface ExtendedStashTab {
 	children: StashTab[];
 	items?: Item[];
 }
+
+export interface League {
+	id: string;
+}

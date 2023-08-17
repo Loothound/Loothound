@@ -32,6 +32,7 @@ async fn do_oauth<R: Runtime>(window: Window<R>) -> Result<u16, String> {
         .add_scope(Scope::new("account:stashes".to_string()))
         .add_scope(Scope::new("account:league_accounts".to_string()))
         .add_scope(Scope::new("account:characters".to_string()))
+        .add_scope(Scope::new("account:leagues".to_string()))
         .set_pkce_challenge(pkce_challenge)
         .url();
 

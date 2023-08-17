@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/tauri';
-import { ExtendedStashTab, StashTab } from '../types/types';
+import { ExtendedStashTab, StashTab, League } from '../types/types';
 import api from './client';
 
-export const fetchStashes = async () => {
-	const { data } = await api.get<{ stashes: StashTab[] }>('stash/Crucible');
+export const fetchStashes = async (leagueId: string) => {
+	const { data } = await api.get<{ stashes: StashTab[] }>(`stash/${leagueId}`);
 	const tab_array: StashTab[] = [];
 	for (const s of data.stashes) {
 		if (s.metadata.folder) {
@@ -24,7 +24,6 @@ export const fetchStashes = async () => {
 			});
 		}
 	}
-
 	return { stashes: tab_array };
 };
 
@@ -36,4 +35,11 @@ export const getSingleStash = async (stashId: string) => {
 	}>(`stash/Crucible/${stashId}`);
 
 	return stash;
+};
+
+export const fetchLeagues = async () => {
+	const {
+		data: { leagues },
+	} = await api.get<{ leagues: League[] }>('account/leagues');
+	return { leagues: leagues };
 };
