@@ -71,7 +71,7 @@ export async function fetch_stashes(ids: string[], league: string): Promise<Exte
 		});
 		const rateLimiters = [];
 		for (const l of limits) {
-			const rl = new RateLimiter({ tokensPerInterval: l[0], interval: l[1] * 1000 });
+			const rl = new RateLimiter({ tokensPerInterval: l[0] - 1, interval: l[1] * 1000 });
 			await rl.removeTokens(1);
 			rateLimiters.push(rl);
 		}
