@@ -1,7 +1,7 @@
 import { Button, Flex, Modal, MultiSelect, Select, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useAddProfile, useFetchStashes } from '../services/services';
-import { StashTab } from '../types/types';
+import { useAddProfile, useFetchStashes, useFetchLeagues } from '../services/services';
+import { League, StashTab } from '../types/types';
 import { Dispatch, SetStateAction } from 'react';
 
 type Props = {
@@ -11,10 +11,6 @@ type Props = {
 };
 
 const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
-	const { data: stashesData = [], isLoading: isStashesDataLoading } = useFetchStashes();
-
-	const addProfileMutation = useAddProfile();
-
 	const form = useForm({
 		initialValues: {
 			profileName: '',
@@ -31,6 +27,16 @@ const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
 		},
 	});
 
+	const { data: leagueData = [], isLoading: isLeaguesLoading } = useFetchLeagues();
+	const { data: stashesData = [], isLoading: isStashesDataLoading } = useFetchStashes(
+		form.values.leagueId,
+		{
+			enabled: !!form.values.leagueId,
+		}
+	);
+
+	const addProfileMutation = useAddProfile();
+
 	const handleFormSubmit = async (values: CreateProfilePayload) => {
 		const profileMutation = await addProfileMutation.mutateAsync(values);
 		form.reset();
@@ -42,6 +48,14 @@ const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
 		const options = stashes.map((stash: StashTab) => ({
 			label: stash.name,
 			value: stash.id,
+		}));
+		return options;
+	};
+
+	const makeLeagueOptions = ({ leagues = [] }: any) => {
+		const options = leagues.map((league: League) => ({
+			label: league.id,
+			value: league.id,
 		}));
 		return options;
 	};
@@ -75,11 +89,9 @@ const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
 							/>
 							<Select
 								label="Choose League"
-								placeholder="Choose league"
-								data={[
-									{ label: 'Crucible', value: 'crucible' },
-									{ label: 'Crucible HC', value: 'cruciblehc' },
-								]}
+								placeholder={isLeaguesLoading ? 'Loading...' : 'Choose league'}
+								data={makeLeagueOptions(leagueData)}
+								disabled={isLeaguesLoading}
 								withAsterisk
 								{...form.getInputProps('leagueId')}
 							/>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/tauri';
-import { fetchStashes } from '../api/api';
+import { fetchStashes, fetchLeagues } from '../api/api';
 import {
 	Profile,
 	ProfileWithStashes,
@@ -12,7 +12,22 @@ import {
 } from '../api/db';
 import { CreateProfilePayload } from '../components/ProfileModal';
 
-export const useFetchStashes = () => useQuery(['stashes'], fetchStashes, { staleTime: 120000 });
+enum QueryKeys {
+	STASHES = 'stashes',
+	PROFILES = 'profiles',
+	SNAPSHOTS = 'snapshots',
+	SNAPSHOT_ITEMS = 'snapshot_items',
+	LEAGUES = 'leagues',
+}
+
+export const useFetchStashes = (leagueId: string, options: Record<string, any>) =>
+	useQuery([QueryKeys.STASHES, leagueId], () => fetchStashes(leagueId), {
+		staleTime: 120000,
+		...options,
+	});
+
+export const useFetchLeagues = () =>
+	useQuery([QueryKeys.LEAGUES], fetchLeagues, { staleTime: 120000 });
 
 export const useAddProfile = () => {
 	const queryClient = useQueryClient();
@@ -20,7 +35,7 @@ export const useAddProfile = () => {
 	return useMutation<Profile, unknown, CreateProfilePayload>(
 		(values: CreateProfilePayload) => invoke('plugin:sql|create_profile', values),
 		{
-			onSuccess: () => queryClient.invalidateQueries(['profiles']),
+			onSuccess: () => queryClient.invalidateQueries([QueryKeys.PROFILES]),
 		}
 	);
 };
@@ -31,12 +46,12 @@ export const useEditProfile = () => {
 	return useMutation(
 		(values: ProfileWithStashes) => updateProfile(values.profile, values.stashes),
 		{
-			onSuccess: () => queryClient.invalidateQueries(['profiles']),
+			onSuccess: () => queryClient.invalidateQueries([QueryKeys.PROFILES]),
 		}
 	);
 };
 
-export const useGetProfiles = () => useQuery(['profiles'], getProfiles);
+export const useGetProfiles = () => useQuery([QueryKeys.PROFILES], getProfiles);
 
 export const useAddSnapshot = () => {
 	const queryClient = useQueryClient();
@@ -44,13 +59,14 @@ export const useAddSnapshot = () => {
 	return useMutation<Snapshot, unknown, number | bigint | null>(
 		(profileId) => invoke('plugin:sql|new_snapshot', { profileId }),
 		{
-			onSuccess: (data: Snapshot) => queryClient.invalidateQueries(['snapshots', data.profile_id]),
+			onSuccess: (data: Snapshot) =>
+				queryClient.invalidateQueries([QueryKeys.SNAPSHOTS, data.profile_id]),
 		}
 	);
 };
 
 export const useGetSnapshots = (profileId: number, options?: Record<string, any>) =>
-	useQuery(['snapshots', profileId], () => listSnapshots(profileId), options);
+	useQuery([QueryKeys.SNAPSHOTS, profileId], () => listSnapshots(profileId), options);
 
 export const useGetSnapshotItems = (snapshot: Snapshot, options: Record<string, any>) =>
-	useQuery(['snapshotItems', snapshot], () => fetchSnapshotItems(snapshot), options);
+	useQuery([QueryKeys.SNAPSHOT_ITEMS, snapshot], () => fetchSnapshotItems(snapshot), options);
