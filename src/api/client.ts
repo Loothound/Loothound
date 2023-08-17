@@ -35,27 +35,24 @@ client.interceptors.response.use(
 
 const limiters: Record<string, RateLimiter[]> = {};
 
-export async function fetch_stash(id: string): Promise<ExtendedStashTab> {
-	return (await fetch_stashes([id]))[0];
+export async function fetch_stash(id: string, league: string): Promise<ExtendedStashTab> {
+	return (await fetch_stashes([id], league))[0];
 }
 
-export async function fetch_stashes(ids: string[]): Promise<ExtendedStashTab[]> {
+export async function fetch_stashes(ids: string[], league: string): Promise<ExtendedStashTab[]> {
 	const policy = 'stash-request-limit';
 
 	const tabs: ExtendedStashTab[] = [];
 
 	async function fetch(id: string): Promise<ExtendedStashTab> {
 		for (const l of limiters[policy]) {
-			console.log('awaiting limiters');
 			await l.removeTokens(1);
-			console.log('limiters free');
-			console.log('');
 		}
 		const {
 			data: { stash },
 		} = await client.get<{
 			stash: ExtendedStashTab;
-		}>(`stash/Crucible/${id}`);
+		}>(`stash/${league}/${id}`);
 		return stash;
 	}
 
@@ -65,7 +62,7 @@ export async function fetch_stashes(ids: string[]): Promise<ExtendedStashTab[]> 
 		const {
 			headers,
 			data: { stash },
-		} = await client.get<{ stash: ExtendedStashTab }>(`stash/Crucible/${first}`);
+		} = await client.get<{ stash: ExtendedStashTab }>(`stash/${league}/${first}`);
 		tabs.push(stash);
 		const rateLimitString: string = headers['x-rate-limit-account'];
 		const limits = rateLimitString.split(',').map((x) => {

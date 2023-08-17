@@ -2,8 +2,13 @@ import { Button, Flex, Modal, MultiSelect, Select, TextInput } from '@mantine/co
 import { useForm } from '@mantine/form';
 import { useEffect } from 'react';
 import { ProfileWithStashes } from '../bindings';
-import { useEditProfile, useFetchStashes } from '../services/services';
-import { StashTab } from '../types/types';
+import {
+	useEditProfile,
+	useFetchLeagues,
+	useFetchStashes,
+	usePricingLeagues,
+} from '../services/services';
+import { League, StashTab } from '../types/types';
 
 type Props = {
 	isOpen: boolean;
@@ -12,19 +17,6 @@ type Props = {
 };
 
 const EditProfileModal = ({ isOpen, onClose, profileData }: Props) => {
-	const { data: stashesData = [], isLoading: isStashesDataLoading } = useFetchStashes();
-
-	const editProfileMutation = useEditProfile();
-
-	useEffect(() => {
-		form.setValues({
-			profileName: profileData?.profile.name || '',
-			pricingLeague: profileData?.profile.pricing_league || '',
-			leagueId: profileData?.profile.league_id || '',
-			stashTabs: profileData?.stashes || [],
-		});
-	}, [profileData]);
-
 	const form = useForm({
 		initialValues: {
 			profileName: profileData?.profile.name || '',
@@ -40,6 +32,26 @@ const EditProfileModal = ({ isOpen, onClose, profileData }: Props) => {
 			stashTabs: (value) => (value.length ? null : 'You must choose at least a stash'),
 		},
 	});
+
+	const { data: leagueData = [], isLoading: isLeaguesLoading } = useFetchLeagues();
+	const { data: stashesData = [], isLoading: isStashesDataLoading } = useFetchStashes(
+		form.values.leagueId,
+		{
+			enabled: !!form.values.leagueId,
+		}
+	);
+	const { data: pricingLeaguesData = [], isLoading: isPricingLeaguesLoading } = usePricingLeagues();
+
+	const editProfileMutation = useEditProfile();
+
+	useEffect(() => {
+		form.setValues({
+			profileName: profileData?.profile.name || '',
+			pricingLeague: profileData?.profile.pricing_league || '',
+			leagueId: profileData?.profile.league_id || '',
+			stashTabs: profileData?.stashes || [],
+		});
+	}, [profileData]);
 
 	const handleFormSubmit = async (values: CreateProfilePayload) => {
 		const remappedValues = {
@@ -64,6 +76,22 @@ const EditProfileModal = ({ isOpen, onClose, profileData }: Props) => {
 		return options;
 	};
 
+	const makeLeagueOptions = ({ leagues = [] }: any) => {
+		const options = leagues.map((league: League) => ({
+			label: league.id,
+			value: league.id,
+		}));
+		return options;
+	};
+
+	const makePricingLeagueOptions = (leagues: string[]) => {
+		const options = leagues.map((s: string) => ({
+			label: s,
+			value: s,
+		}));
+		return options;
+	};
+
 	return (
 		<Modal.Root opened={isOpen} onClose={onClose} size="md" centered>
 			<Modal.Overlay />
@@ -84,20 +112,16 @@ const EditProfileModal = ({ isOpen, onClose, profileData }: Props) => {
 							<Select
 								label="Choose Pricing League"
 								placeholder="Choose league"
-								data={[
-									{ label: 'Crucible', value: '1' },
-									{ label: 'Crucible HC', value: '2' },
-								]}
+								data={makePricingLeagueOptions(pricingLeaguesData)}
+								disabled={isPricingLeaguesLoading}
 								withAsterisk
 								{...form.getInputProps('pricingLeague')}
 							/>
 							<Select
 								label="Choose League"
 								placeholder="Choose league"
-								data={[
-									{ label: 'Crucible', value: '1' },
-									{ label: 'Crucible HC', value: '2' },
-								]}
+								data={makeLeagueOptions(leagueData)}
+								disabled={isLeaguesLoading}
 								withAsterisk
 								{...form.getInputProps('leagueId')}
 							/>
