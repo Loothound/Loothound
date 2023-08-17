@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api';
-import { S } from '@tauri-apps/api/dialog-20ff401c';
 import { Stash, Profile, ProfileWithStashes, Snapshot, Item, UseEffectResponse } from '../bindings';
 
 export * from '../bindings';
@@ -34,7 +33,7 @@ export async function addItemsToSnapshot(
 	snapshot: Snapshot,
 	items: Item[],
 	stashId: string
-): number {
+): Promise<number> {
 	return await invoke('plugin:sql|add_items_to_snapshot', { snapshot, items, stashId });
 }
 
