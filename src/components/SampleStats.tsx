@@ -78,7 +78,7 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 				value:
 					total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
 					' div',
-				diff: Number(getDiff(snapshotData)).toFixed(2),
+				diff: Number(getDiff(snapshotData)),
 			},
 			{
 				title: 'Income',
@@ -121,7 +121,7 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 					>
 						{stat.diff ? (
 							<>
-								<span>{stat.diff}%</span>
+								<span>{stat.diff.toFixed(2)}%</span>
 								{stat.diff && stat.diff > 1 && stat.diff && stat.diff < 0 && (
 									<DiffIcon size="16px" stroke={1.5} />
 								)}
