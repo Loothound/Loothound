@@ -100,7 +100,7 @@ static ITEM_CATEGORIES: [&str; 18] = [
     "Essence",
     "Vial",
 ];
-static LEAGUE: &str = "Crucible";
+static LEAGUES: [&str; 1] = ["Standard"];
 
 fn app_path<R: Runtime>(app: &AppHandle<R>) -> PathBuf {
     app.path_resolver()
@@ -125,16 +125,18 @@ async fn insert_stash(
     stash_id: String,
     stash_name: String,
     stash_type: String,
+    league: String,
 ) -> Result<Stash> {
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
     sqlx::query_as(
-        "INSERT INTO stashes (id, name, type) VALUES (?, ?, ?)  ON CONFLICT(id) DO UPDATE SET id=excluded.id, name=excluded.name, type=excluded.type RETURNING *",
+        "INSERT INTO stashes (id, name, type, league) VALUES (?, ?, ?, ?)  ON CONFLICT(id) DO UPDATE SET id=excluded.id, name=excluded.name, type=excluded.type, league=excluded.league RETURNING *",
     )
     .bind(stash_id)
     .bind(stash_name)
     .bind(stash_type)
+    .bind(league)
     .fetch_one(pool)
     .await
     .map_err(Error::Sql)
@@ -145,6 +147,8 @@ async fn create_profile(
     con: State<'_, DbCon>,
     profile_name: String,
     stash_tabs: Vec<String>,
+    league_id: String,
+    pricing_league: String,
 ) -> Result<Profile> {
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
@@ -155,8 +159,8 @@ async fn create_profile(
         "INSERT INTO profiles (name, league_id, pricing_league) VALUES (?, ?, ?) RETURNING *",
     )
     .bind(profile_name)
-    .bind("1")
-    .bind("1")
+    .bind(league_id)
+    .bind(pricing_league)
     .fetch_one(pool)
     .await?;
 
@@ -216,7 +220,7 @@ async fn new_snapshot(con: State<'_, DbCon>, profile_id: i64) -> Result<Snapshot
         "INSERT INTO snapshots (profile_id, timestamp, pricing_revision, value) VALUES (?, ?, ?, ?)",
     )
     .bind(profile_id)
-    .bind(chrono::Local::now().naive_utc())
+    .bind(chrono::Local::now().naive_local())
     .bind(pricing_revision.0)
     .bind(0.0)
     .execute(pool)
@@ -245,6 +249,14 @@ async fn add_items_to_snapshot(
 
     let mut counter = 0.0;
 
+    let profile = sqlx::query_as::<_, Profile>("SELECT * FROM profiles WHERE id = ?")
+        .bind(snapshot.profile_id)
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)?;
+
+    let league = profile.pricing_league;
+
     for item in items {
         let json_item = serde_json::to_string(&item).unwrap();
         let name = if item.name.len() > 0 {
@@ -253,10 +265,11 @@ async fn add_items_to_snapshot(
             item.type_line
         };
         let mut price = sqlx::query_as::<_, Price>(
-            "SELECT * FROM price WHERE name LIKE ? AND revision = ? LIMIT 1",
+            "SELECT * FROM price WHERE name LIKE ? AND revision = ? AND league = ? LIMIT 1",
         )
         .bind(&name)
         .bind(snapshot.pricing_revision)
+        .bind(&league)
         .fetch_one(pool)
         .await
         .map_err(Error::Sql)
@@ -311,97 +324,77 @@ async fn snapshot_set_value(con: State<'_, DbCon>, snapshot: Snapshot, value: i6
 }
 
 #[tauri::command]
-async fn fetch_prices(con: State<'_, DbCon>) -> Result<i64> {
+async fn fetch_prices(con: State<'_, DbCon>) -> Result<()> {
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
-    let current_revision: (i64,) = sqlx::query_as("SELECT MAX(revision) as rev FROM price")
-        .fetch_one(pool)
-        .await
-        .map_err(Error::Sql)
-        .unwrap_or((0,));
-    let next_rev = current_revision.0 + 1;
+    async fn fetch_prices_for_league(pool: &SqlitePool, league: String) -> Result<()> {
+        let current_revision: (i64,) =
+            sqlx::query_as("SELECT MAX(revision) as rev FROM price WHERE league = ?")
+                .bind(&league)
+                .fetch_one(pool)
+                .await
+                .map_err(Error::Sql)
+                .unwrap_or((0,));
+        let next_rev = current_revision.0 + 1;
 
-    let timestamp = chrono::Local::now().naive_utc();
+        let timestamp = chrono::Local::now().naive_utc();
 
-    for currency_type in CURRENCY_CATEGORIES {
-        let url = format!(
-            "https://poe.ninja/api/data/currencyoverview?league={}&type={}",
-            LEAGUE, currency_type
-        );
-        let resp: NinjaCurrencyResponse = reqwest::get(url).await?.json().await?;
+        for currency_type in CURRENCY_CATEGORIES {
+            let url = format!(
+                "https://poe.ninja/api/data/currencyoverview?league={}&type={}",
+                league, currency_type
+            );
+            let resp: NinjaCurrencyResponse = reqwest::get(url).await?.json().await?;
 
-        for line in resp.lines.iter() {
-            if let Some(receive) = &line.receive {
+            for line in resp.lines.iter() {
+                if let Some(receive) = &line.receive {
+                    sqlx::query(
+                        "INSERT INTO price (name, price, revision, timestamp, league) VALUES (?, ?, ?, ?, ?)",
+                    )
+                    .bind(&line.currency_type_name)
+                    .bind(receive.value)
+                    .bind(next_rev)
+                    .bind(timestamp)
+                    .bind(&league)
+                    .execute(pool)
+                    .await
+                    .map_err(Error::Sql)?;
+                }
+            }
+        }
+
+        for item_type in ITEM_CATEGORIES {
+            let url = format!(
+                "https://poe.ninja/api/data/itemoverview?league={}&type={}",
+                league, item_type
+            );
+            let resp: NinjaItemResponse = reqwest::get(url).await?.json().await?;
+
+            for line in resp.lines.iter() {
+                let links = line.links.map(|n| if n == 6 { 1 } else { 0 }).unwrap_or(0);
                 sqlx::query(
-                    "INSERT INTO price (name, price, revision, timestamp) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO price (name, price, revision, fully_linked, timestamp, league) VALUES (?, ?, ?, ?, ?, ?)",
                 )
-                .bind(&line.currency_type_name)
-                .bind(receive.value)
+                .bind(&line.name)
+                .bind(line.chaos_value)
                 .bind(next_rev)
+                .bind(links)
                 .bind(timestamp)
+                .bind(&league)
                 .execute(pool)
                 .await
                 .map_err(Error::Sql)?;
             }
         }
+        Ok(())
     }
 
-    for item_type in ITEM_CATEGORIES {
-        let url = format!(
-            "https://poe.ninja/api/data/itemoverview?league={}&type={}",
-            LEAGUE, item_type
-        );
-        let resp: NinjaItemResponse = reqwest::get(url).await?.json().await?;
-
-        for line in resp.lines.iter() {
-            let links = line.links.map(|n| if n == 6 { 1 } else { 0 }).unwrap_or(0);
-            sqlx::query(
-                "INSERT INTO price (name, price, revision, fully_linked, timestamp) VALUES (?, ?, ?, ?, ?)",
-            )
-            .bind(&line.name)
-            .bind(line.chaos_value)
-            .bind(next_rev)
-            .bind(links)
-            .bind(timestamp)
-            .execute(pool)
-            .await
-            .map_err(Error::Sql)?;
-        }
+    for league in LEAGUES.iter() {
+        fetch_prices_for_league(&pool, league.to_string()).await?;
     }
 
-    Ok(current_revision.0)
-}
-
-#[tauri::command]
-async fn check_price(con: State<'_, DbCon>, name: String) -> Result<f64> {
-    let mutex = con.db.lock().await;
-    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
-
-    let current_revision: (i64,) = sqlx::query_as("SELECT MAX(revision) as rev FROM price")
-        .fetch_one(pool)
-        .await
-        .map_err(Error::Sql)
-        .unwrap_or((0,));
-
-    let price = sqlx::query_as::<_, Price>(
-        "SELECT * FROM price WHERE name LIKE ? AND revision = ? LIMIT 1",
-    )
-    .bind(name)
-    .bind(current_revision.0)
-    .fetch_one(pool)
-    .await
-    .map_err(Error::Sql)
-    .unwrap_or(Price {
-        id: 0,
-        name: "".into(),
-        price: 0.0,
-        revision: 0,
-        fully_linked: false,
-        timestamp: chrono::Local::now().naive_utc(),
-    });
-
-    Ok(price.price)
+    Ok(())
 }
 
 #[tauri::command]
@@ -580,19 +573,28 @@ async fn basically_this_use_effect(
     let mutex = con.db.lock().await;
     let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
 
+    let profile = sqlx::query_as::<_, Profile>("SELECT * FROM profiles WHERE id = ?")
+        .bind(snapshot.profile_id)
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)?;
+    let league = profile.pricing_league;
+
     let item_rows = sqlx::query_as::<_, ItemRow>("SELECT * FROM item WHERE snapshot_id = ?")
         .bind(snapshot.id)
         .fetch_all(pool)
         .await
         .map_err(Error::Sql)?;
 
-    let snapshot_div_price =
-        sqlx::query_as::<_, Price>("SELECT  * FROM price WHERE name = ? AND revision = ? LIMIT 1")
-            .bind("Divine Orb")
-            .bind(snapshot.pricing_revision)
-            .fetch_one(pool)
-            .await
-            .map_err(Error::Sql)?;
+    let snapshot_div_price = sqlx::query_as::<_, Price>(
+        "SELECT  * FROM price WHERE name = ? AND revision = ? AND LEAGUE = ? LIMIT 1",
+    )
+    .bind("Divine Orb")
+    .bind(snapshot.pricing_revision)
+    .bind(league)
+    .fetch_one(pool)
+    .await
+    .map_err(Error::Sql)?;
 
     Ok(UseEffectResponse {
         items: item_rows
@@ -605,6 +607,23 @@ async fn basically_this_use_effect(
         total_chaos: snapshot.value,
         total_div: snapshot.value / snapshot_div_price.price,
     })
+}
+
+#[tauri::command]
+async fn stash_from_id(con: State<'_, DbCon>, stash_id: String) -> Result<Stash> {
+    let mutex = con.db.lock().await;
+    let pool = mutex.as_ref().ok_or(Error::DatabaseNotLoaded)?;
+
+    sqlx::query_as::<_, Stash>("SELECT * FROM stashes WHERE id = ?")
+        .bind(stash_id)
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)
+}
+
+#[tauri::command]
+async fn get_pricing_leagues() -> Result<Vec<String>> {
+    Ok(LEAGUES.iter().map(|x| x.to_string()).collect())
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
@@ -636,7 +655,6 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             get_profiles,
             new_snapshot,
             fetch_prices,
-            check_price,
             add_items_to_snapshot,
             snapshot_set_value,
             list_snapshots,
@@ -646,7 +664,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             has_recent_prices,
             snapshot_fetch_items,
             oopsie,
-            basically_this_use_effect
+            basically_this_use_effect,
+            stash_from_id,
+            get_pricing_leagues
         ])
         .build()
 }
