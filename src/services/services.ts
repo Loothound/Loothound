@@ -9,6 +9,7 @@ import {
 	getProfiles,
 	listSnapshots,
 	updateProfile,
+	getPricingLeagues,
 } from '../api/db';
 import { CreateProfilePayload } from '../components/ProfileModal';
 
@@ -18,6 +19,7 @@ enum QueryKeys {
 	SNAPSHOTS = 'snapshots',
 	SNAPSHOT_ITEMS = 'snapshot_items',
 	LEAGUES = 'leagues',
+	PRICING_LEAGUES = 'pricing_leagues',
 }
 
 export const useFetchStashes = (leagueId: string, options: Record<string, any>) =>
@@ -28,6 +30,8 @@ export const useFetchStashes = (leagueId: string, options: Record<string, any>) 
 
 export const useFetchLeagues = () =>
 	useQuery([QueryKeys.LEAGUES], fetchLeagues, { staleTime: 120000 });
+
+export const usePricingLeagues = () => useQuery([QueryKeys.PRICING_LEAGUES], getPricingLeagues);
 
 export const useAddProfile = () => {
 	const queryClient = useQueryClient();

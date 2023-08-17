@@ -1,6 +1,11 @@
 import { Button, Flex, Modal, MultiSelect, Select, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useAddProfile, useFetchStashes, useFetchLeagues } from '../services/services';
+import {
+	useAddProfile,
+	useFetchStashes,
+	useFetchLeagues,
+	usePricingLeagues,
+} from '../services/services';
 import { League, StashTab } from '../types/types';
 import { Dispatch, SetStateAction } from 'react';
 
@@ -34,10 +39,12 @@ const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
 			enabled: !!form.values.leagueId,
 		}
 	);
+	const { data: pricingLeaguesData = [], isLoading: isPricingLeaguesLoading } = usePricingLeagues();
 
 	const addProfileMutation = useAddProfile();
 
 	const handleFormSubmit = async (values: CreateProfilePayload) => {
+		console.log(values);
 		const profileMutation = await addProfileMutation.mutateAsync(values);
 		form.reset();
 		setSelectedProfile(profileMutation.id);
@@ -56,6 +63,14 @@ const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
 		const options = leagues.map((league: League) => ({
 			label: league.id,
 			value: league.id,
+		}));
+		return options;
+	};
+
+	const makePricingLeagueOptions = (leagues: string[]) => {
+		const options = leagues.map((s: string) => ({
+			label: s,
+			value: s,
 		}));
 		return options;
 	};
@@ -80,10 +95,8 @@ const ProfileModal = ({ isOpen, onClose, setSelectedProfile }: Props) => {
 							<Select
 								label="Choose Pricing League"
 								placeholder="Choose league"
-								data={[
-									{ label: 'Crucible', value: 'crucible' },
-									{ label: 'Crucible HC', value: 'cruciblehc' },
-								]}
+								data={makePricingLeagueOptions(pricingLeaguesData)}
+								disabled={isPricingLeaguesLoading}
 								withAsterisk
 								{...form.getInputProps('pricingLeague')}
 							/>

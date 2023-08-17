@@ -13,6 +13,7 @@ export const fetchStashes = async (leagueId: string) => {
 					stashId: child.id,
 					stashName: child.name,
 					stashType: child.type,
+					league: leagueId,
 				});
 			}
 		} else {
@@ -21,6 +22,7 @@ export const fetchStashes = async (leagueId: string) => {
 				stashId: s.id,
 				stashName: s.name,
 				stashType: s.type,
+				league: leagueId,
 			});
 		}
 	}

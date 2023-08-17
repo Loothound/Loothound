@@ -92,6 +92,7 @@ const ItemTable = ({ snapshot, setTotal, isSnapshotLoading }: Props) => {
 					{
 						accessor: 'name',
 						sortable: true,
+						width: '70%',
 					},
 					{ accessor: 'amount', sortable: true },
 					{

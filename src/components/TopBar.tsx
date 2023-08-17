@@ -67,7 +67,8 @@ const TopBar = ({
 		queryClient.invalidateQueries(['snapshots', selectedProfileId]);
 
 		const s = await fetch_stashes(
-			profilesData.find((x) => x.profile.id === selectedProfileId)?.stashes as string[]
+			profilesData.find((x) => x.profile.id === selectedProfileId)?.stashes as string[],
+			profilesData.find((x) => x.profile.id === selectedProfileId)?.profile.league_id as string
 		);
 
 		const extraItems: Item[] = [];
@@ -93,6 +94,7 @@ const TopBar = ({
 						snapshot: snapshot,
 						items: [item],
 						stashId: stashtab.id,
+						league: stashtab,
 					});
 					extraItems.push(item);
 				}
@@ -108,6 +110,7 @@ const TopBar = ({
 		}
 		snapshot.value = total;
 		setSnapshot(snapshot);
+		queryClient.invalidateQueries(['snapshots', selectedProfileId]);
 	};
 
 	return (

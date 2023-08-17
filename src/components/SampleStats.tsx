@@ -46,6 +46,30 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 		}
 	};
 
+	const getEarningsPerHour = (snapshots: Snapshot[] | undefined) => {
+		if (!snapshots) return 0;
+		const ONE_HOUR = 60 * 60 * 1000;
+		const now = Date.now();
+		console.log('now: ', now);
+		let smallest = 0,
+			largest = 0;
+		for (const snapshot of snapshots) {
+			if (now - Date.parse(snapshot.timestamp) < ONE_HOUR) {
+				const value = snapshot.value;
+				if (value < smallest) {
+					smallest = value;
+				}
+				if (value > largest) {
+					largest = value;
+				}
+			}
+		}
+
+		console.log(largest, smallest);
+
+		return largest - smallest;
+	};
+
 	function getData(total: number): StatsGridData[] {
 		return [
 			{
@@ -60,10 +84,10 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 				title: 'Income',
 				icon: 'income',
 				value:
-					Number(420).toLocaleString(undefined, {
+					getEarningsPerHour(snapshotData).toLocaleString(undefined, {
 						minimumFractionDigits: 2,
 						maximumFractionDigits: 2,
-					}) + '/h',
+					}) + ' chaos/h',
 				diff: 0,
 			},
 			{

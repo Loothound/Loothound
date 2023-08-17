@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api';
+import { S } from '@tauri-apps/api/dialog-20ff401c';
 import { Stash, Profile, ProfileWithStashes, Snapshot, Item, UseEffectResponse } from '../bindings';
 
 export * from '../bindings';
@@ -70,4 +71,8 @@ export async function oopsie() {
 
 export async function basicallyThisUseEffect(snapshot: Snapshot): Promise<UseEffectResponse> {
 	return await invoke('plugin:sql|basically_this_use_effect', { snapshot });
+}
+
+export async function getPricingLeagues(): Promise<string[]> {
+	return await invoke('plugin:sql|get_pricing_leagues');
 }
