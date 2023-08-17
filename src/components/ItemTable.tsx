@@ -1,100 +1,125 @@
-import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
-import { Line } from "react-chartjs-2";
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  Legend,
-  LineElement,
-  LinearScale,
-  PointElement,
-  Title,
-  Tooltip,
-} from "chart.js";
-import { Item } from "../types/types";
+import { Box, Flex, createStyles } from '@mantine/core';
+import { sortBy } from 'lodash';
+import { DataTable, DataTableSortStatus } from 'mantine-datatable';
+import { useEffect, useState } from 'react';
+import { Snapshot, basicallyThisUseEffect } from '../api/db';
 
 type Props = {
-  items: Item[];
+	snapshot: Snapshot;
+	setTotal: React.Dispatch<React.SetStateAction<number>>;
+	isSnapshotLoading: boolean;
+	setIsSnapshotLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-export const options = {
-  events: [],
-  responsive: true,
-  borderWidth: 1.5,
-  plugins: {
-    legend: {
-      display: false,
-    },
-    title: {
-      display: false,
-    },
-  },
-  scales: {
-    x: {
-      display: false,
-    },
-    y: {
-      display: false,
-    },
-  },
+interface ItemRecord {
+	gggId: string;
+	name: string;
+	amount: number;
+	value: number;
+	icon: string;
+}
+
+const PAGE_SIZE = 14;
+
+const ItemTable = ({ snapshot, setTotal, isSnapshotLoading }: Props) => {
+	const { classes } = useStyles();
+	const [records, setRecords] = useState<ItemRecord[]>([]);
+	const [sortStatus, setSortStatus] = useState<DataTableSortStatus>({
+		columnAccessor: 'value',
+		direction: 'desc',
+	});
+	const [page, setPage] = useState(1);
+	const [isLoading, setIsLoading] = useState(false);
+
+	useEffect(() => {
+		if (!('id' in snapshot)) {
+			console.log('this ran');
+			return;
+		}
+		(async () => {
+			console.log('this ran 2');
+			setIsLoading(true);
+			const res = await basicallyThisUseEffect(snapshot);
+			const r: ItemRecord[] = [];
+			for (const item_data of res.items) {
+				const item = item_data.item;
+				const value = item_data.price;
+				const amount = item.stackSize ? Number(item.stackSize) : 1;
+				r.push({
+					gggId: item.id as string,
+					name: item.name ? `${item.name} ${item.typeLine}` : item.typeLine,
+					amount: amount,
+					value: value,
+					icon: item.icon,
+				});
+			}
+			const data = sortBy(r, sortStatus.columnAccessor);
+			setRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
+			setTotal(res.total_div);
+			setIsLoading(false);
+		})();
+	}, [snapshot]);
+
+	useEffect(() => {
+		const data = sortBy(records, sortStatus.columnAccessor);
+		setRecords(sortStatus.direction === 'desc' ? data.reverse() : data);
+		console.log(sortBy(records, sortStatus.columnAccessor));
+	}, [sortStatus]);
+
+	return (
+		<Box className={classes.root}>
+			<DataTable
+				withBorder
+				borderRadius="sm"
+				mt="sm"
+				withColumnBorders
+				striped
+				highlightOnHover
+				records={records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+				minHeight={200}
+				idAccessor="gggId"
+				fetching={isLoading || isSnapshotLoading}
+				columns={[
+					{
+						accessor: 'icon',
+						// Icon image thingy from PoE API seems to always be 47px², scaling it down a bit for the UI
+						render: ({ icon }) => (
+							<Flex justify={'center'}>
+								<img src={icon} height="32px" />
+							</Flex>
+						),
+					},
+					{
+						accessor: 'name',
+						sortable: true,
+						width: '70%',
+					},
+					{ accessor: 'amount', sortable: true },
+					{
+						accessor: 'value',
+						sortable: true,
+						render: ({ value }) =>
+							value.toLocaleString(undefined, {
+								maximumFractionDigits: 2,
+								minimumFractionDigits: 2,
+							}),
+					},
+				]}
+				sortStatus={sortStatus}
+				onSortStatusChange={setSortStatus}
+				page={page}
+				onPageChange={setPage}
+				recordsPerPage={PAGE_SIZE}
+				totalRecords={records.length}
+			/>
+		</Box>
+	);
 };
 
-const labels = ["January", "February", "March", "April", "May", "June", "July"];
-
-export const data = {
-  labels,
-  datasets: [
-    {
-      label: "Dataset 1",
-      data: labels.map(() => 1),
-      borderColor: "rgb(255, 99, 132)",
-      backgroundColor: "rgba(255, 99, 132, 0.5)",
-      fill: false,
-      pointRadius: 0,
-      spanGaps: true,
-      tension: 0.2,
-    },
-  ],
-};
-
-const ItemTable = ({ items }: Props) => {
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend
-  );
-
-  return (
-    <Table>
-      <Thead>
-        <Tr>
-          <Th>Name</Th>
-          <Th>Type</Th>
-          <Th>Amount</Th>
-          <Th>Sparkline</Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {items.map((item) => {
-          return (
-            <Tr key={item.id}>
-              <Td>{item.typeLine}</Td>
-              <Td>{item.baseType}</Td>
-              <Td>{item.stackSize}</Td>
-              <Td>
-                <div style={{ height: "50px" }}>
-                  <Line options={options} data={data} />
-                </div>
-              </Td>
-            </Tr>
-          );
-        })}
-      </Tbody>
-    </Table>
-  );
-};
+const useStyles = createStyles((theme) => ({
+	root: {
+		padding: `.4rem calc(${theme.spacing.xl} * 1.5)`,
+	},
+}));
 
 export default ItemTable;

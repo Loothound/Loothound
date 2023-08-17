@@ -1,22 +1,52 @@
-import { Box } from '@chakra-ui/react';
-import { useState } from 'react';
+import { Flex } from '@mantine/core';
 import ItemTable from './components/ItemTable';
 import { SampleStats } from './components/SampleStats';
 import TopBar from './components/TopBar';
-import { ExtendedStashTab } from './types/types';
+import { useState, useEffect } from 'react';
+import { Snapshot } from './bindings';
+import { invoke } from '@tauri-apps/api';
 
 function App() {
-  const [stash, setStash] = useState<ExtendedStashTab | null>(null);
+	const [snapshot, setSnapshot] = useState<Snapshot>({} as unknown as Snapshot);
+	const [isSnapshotLoading, setIsSnapshotLoading] = useState(false);
+	const [total, setTotal] = useState(0);
+	const [selectedProfileId, setSelectedProfileId] = useState<number | bigint | null>(null);
 
-  return (
-    <>
-      <TopBar setStash={setStash} />
-      <Box pt="5px" w="100%" justifyContent="center">
-        <SampleStats />
-      </Box>
-      <ItemTable items={stash?.items || []} />
-    </>
-  );
+	const MINUTE_MS = 60000;
+
+	useEffect(() => {
+		invoke('plugin:sql|has_recent_prices').then((x) => {
+			if (!(x as boolean)) {
+				invoke('plugin:sql|fetch_prices');
+			}
+		});
+
+		const interval = setInterval(() => {
+			invoke('plugin:sql|fetch_prices');
+		}, MINUTE_MS * 60);
+
+		return () => clearInterval(interval);
+	}, []);
+
+	return (
+		<>
+			<TopBar
+				selectedProfileId={selectedProfileId}
+				setSelectedProfileId={setSelectedProfileId}
+				setSnapshot={setSnapshot}
+				setIsSnapshotLoading={setIsSnapshotLoading}
+			/>
+			<Flex justify={'center'} pt="5px" w="100%">
+				<SampleStats total={total} selectedProfileId={selectedProfileId} />
+			</Flex>
+			<ItemTable
+				snapshot={snapshot}
+				setTotal={setTotal}
+				isSnapshotLoading={isSnapshotLoading}
+				setIsSnapshotLoading={setIsSnapshotLoading}
+			/>
+		</>
+	);
 }
 
 export default App;

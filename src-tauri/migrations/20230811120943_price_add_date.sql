@@ -1,0 +1,1 @@
+ALTER TABLE price ADD COLUMN timestamp TEXT NOT NULL;
