@@ -1,0 +1,22 @@
+name: Release Workflow
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  deploy-website:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PERSONAL_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+            owner: 'Loothound',
+            repo: 'Loothound',
+            workflow_id: deploy.yml',
+            ref: 'master'
+            })
