@@ -4,22 +4,7 @@ on:
   release:
     types:
       - published
- workflow_dispatch:
-     inputs:
-      workflow_02:
-        description: 'ًWorkflow 2 which will be triggered'
-        required: true
-        default: 'deploy'
-
-      workflow2_github_account:
-        description: 'GitHub Account Owner'
-        required: true
-        default: ':userName'
-
-      workflow2_repo_github:
-        description: 'repo-name'
-        required: true
-        default: ':repoName' 
+    workflow_dispatch:
 
 jobs:
   build:
