@@ -100,7 +100,7 @@ static ITEM_CATEGORIES: [&str; 18] = [
     "Essence",
     "Vial",
 ];
-static LEAGUES: [&str; 1] = ["Standard"];
+static LEAGUES: [&str; 2] = ["Standard", "Ancestor"];
 
 fn app_path<R: Runtime>(app: &AppHandle<R>) -> PathBuf {
     app.path_resolver()
