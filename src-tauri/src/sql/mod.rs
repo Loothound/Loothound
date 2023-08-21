@@ -291,6 +291,13 @@ async fn add_items_to_snapshot(
             .map_err(Error::Sql)?;
     }
 
+    let currentSnapshotValue = sqlx::query_as::<_, (f64,)>("SELECT value FROM snapshots WHERE id = ?")
+        .bind(snapshot.id)
+        .fetch_one(pool)
+        .await
+        .map_err(Error::Sql)?;
+    counter += currentSnapshotValue.0;
+
     sqlx::query("UPDATE snapshots SET value = ? WHERE id = ?")
         .bind(counter)
         .bind(snapshot.id)
