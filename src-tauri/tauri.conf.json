@@ -1,61 +1,61 @@
 {
-  "build": {
-    "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "yarn build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
-  },
-  "package": {
-    "productName": "loothound",
-    "version": "0.0.4"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      },
-      "window": {
-        "all": false,
-        "create": true,
-        "close": true
-      },
-      "http": {
-        "all": false,
-        "request": true,
-        "scope": ["https://api.pathofexile.com/*"]
-      }
-    },
-    "bundle": {
-      "active": true,
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "business.pako.loothound",
-      "targets": "all"
-    },
-    "updater": {
-      "active": true,
-      "endpoints": ["https://github.com/Loothound/Loothound/releases/latest/download/latest.json"],
-      "dialog": true,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE2MDFBRURCOTIwNkJEMzcKUldRM3ZRYVMyNjRCcHM0ZjhEYnBpbDhHdnJpRDNwUGF2akVkbGFJNG9tZTNQYldXL3FSaytha3cK"
-    },
-    "windows": [
-      {
-        "fullscreen": false,
-        "resizable": true,
-        "title": "Loothound",
-        "width": 1100,
-        "height": 800,
-        "minWidth": 1100,
-        "minHeight": 800
-      }
-    ]
-  }
+	"build": {
+		"beforeDevCommand": "yarn dev",
+		"beforeBuildCommand": "yarn build",
+		"devPath": "http://localhost:1420",
+		"distDir": "../dist",
+		"withGlobalTauri": false
+	},
+	"package": {
+		"productName": "loothound",
+		"version": "0.0.5"
+	},
+	"tauri": {
+		"allowlist": {
+			"all": false,
+			"shell": {
+				"all": false,
+				"open": true
+			},
+			"window": {
+				"all": false,
+				"create": true,
+				"close": true
+			},
+			"http": {
+				"all": false,
+				"request": true,
+				"scope": ["https://api.pathofexile.com/*"]
+			}
+		},
+		"bundle": {
+			"active": true,
+			"icon": [
+				"icons/32x32.png",
+				"icons/128x128.png",
+				"icons/128x128@2x.png",
+				"icons/icon.icns",
+				"icons/icon.ico"
+			],
+			"identifier": "business.pako.loothound",
+			"targets": "all"
+		},
+		"updater": {
+			"active": true,
+			"endpoints": ["https://github.com/Loothound/Loothound/releases/latest/download/latest.json"],
+			"dialog": true,
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE2MDFBRURCOTIwNkJEMzcKUldRM3ZRYVMyNjRCcHM0ZjhEYnBpbDhHdnJpRDNwUGF2akVkbGFJNG9tZTNQYldXL3FSaytha3cK"
+		},
+		"windows": [
+			{
+				"fullscreen": false,
+				"resizable": true,
+				"title": "Loothound",
+				"width": 1100,
+				"height": 800,
+				"minWidth": 1100,
+				"minHeight": 800
+			}
+		]
+	}
 }

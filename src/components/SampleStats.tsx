@@ -36,12 +36,13 @@ export function SampleStats({ total, selectedProfileId }: Props) {
 
 	const getDiff = (snapshots: Snapshot[] | undefined) => {
 		if (!snapshots) return 0;
-		if (snapshots.length === 0) return 0;
-		if (snapshots.length === 1) return snapshots[0].pricing_revision;
+		if (snapshots.length <= 0) return 0;
 		if (snapshots.length >= 2) {
 			if (snapshots[snapshots.length - 1].value === snapshots[snapshots.length - 2].value) return 0;
 			return (
-				(snapshots[snapshots.length - 1].value / snapshots[snapshots.length - 2].value - 1) * 100
+				((snapshots[snapshots.length - 1].value - snapshots[snapshots.length - 2].value) /
+					snapshots[snapshots.length - 1].value) *
+				100
 			);
 		}
 	};

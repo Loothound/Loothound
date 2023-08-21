@@ -46,8 +46,6 @@ const TopBar = ({
 		enabled: !!selectedProfileId,
 	});
 
-	console.log(snapshotData);
-
 	const latestSnapshot = snapshotData?.[snapshotData?.length - 1];
 
 	useEffect(() => {
