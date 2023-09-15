@@ -75,7 +75,17 @@ pub struct Item {
     pub identified: bool,
     pub item_level: Option<i64>,
     pub frame_type: i64,
+    pub sockets: Option<Vec<Socket>>, 
 }
+
+#[derive(Debug, PartialEq, serde::Deserialize, serde::Serialize, Clone, TS)]
+#[ts(export, export_to = "../src/bindings/")]
+#[serde(rename_all = "camelCase")]
+pub struct Socket {
+  pub group: i32,
+  pub attr: String, 
+  pub s_colour: String,
+} 
 
 #[derive(FromRow, Debug, PartialEq, serde::Serialize, serde::Deserialize, TS)]
 #[ts(export, export_to = "../src/bindings/")]
