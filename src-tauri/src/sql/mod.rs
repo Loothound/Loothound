@@ -6,6 +6,7 @@ use serde::Serialize;
 use sqlx::migrate::MigrateDatabase;
 use sqlx::sqlite::{Sqlite, SqlitePool};
 use std::{fs::create_dir_all, path::PathBuf};
+use std::cmp;
 use tauri::{
     plugin::{Builder, TauriPlugin},
     AppHandle, Manager, Runtime, State,
@@ -264,12 +265,26 @@ async fn add_items_to_snapshot(
         } else {
             item.type_line
         };
+        let socks: Vec<Socket> = item.sockets.unwrap_or(Vec::new());
+        let (max_links, _) = socks.windows(2).fold((0, 1), |(max, curr_len), w| {
+            if w[0].group == w[1].group {
+                if curr_len+1 > 4 {
+                    (cmp::max(max, curr_len+1), curr_len+1)
+                } else {
+                    (max, curr_len+1)
+                }
+            } else {
+                (max, 1)
+            }
+        });
+
         let mut price = sqlx::query_as::<_, Price>(
-            "SELECT * FROM price WHERE name LIKE ? AND revision = ? AND league = ? LIMIT 1",
+            "SELECT * FROM price WHERE name LIKE ? AND revision = ? AND league = ? AND max_links <= ? ORDER BY max_links desc LIMIT 1",
         )
         .bind(&name)
         .bind(snapshot.pricing_revision)
         .bind(&league)
+        .bind(&max_links)
         .fetch_one(pool)
         .await
         .map_err(Error::Sql)
@@ -379,14 +394,15 @@ async fn fetch_prices(con: State<'_, DbCon>) -> Result<()> {
             let resp: NinjaItemResponse = reqwest::get(url).await?.json().await?;
 
             for line in resp.lines.iter() {
-                let links = line.links.map(|n| if n == 6 { 1 } else { 0 }).unwrap_or(0);
+                let links = line.links.map(|n| if n > 4 { n as i32 } else { 0 }).unwrap_or(0);
                 sqlx::query(
-                    "INSERT INTO price (name, price, revision, fully_linked, timestamp, league) VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO price (name, price, revision, fully_linked, max_links, timestamp, league) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 )
                 .bind(&line.name)
                 .bind(line.chaos_value)
                 .bind(next_rev)
-                .bind(links)
+                .bind(links == 6)
+                .bind(&links)
                 .bind(timestamp)
                 .bind(&league)
                 .execute(pool)
